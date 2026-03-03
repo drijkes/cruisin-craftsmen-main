@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Cosmetics Tool • Cruisin Craftsmen</title>
+  <style>
+    :root{
+      --bg:#1e1e1e; --card:#2a2a2a; --muted:#444; --muted2:#555; --text:#FEFEF3; --accent:#A82B2D;
+    }
+    body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--text); }
+    header { text-align:center; padding:2rem 1rem 1rem; }
+    header img { max-width:280px; height:auto; }
+    h1 { font-size:1.6rem; margin:.8rem 0 1rem; }
+    .wrap { max-width:960px; margin:0 auto; padding:1rem; }
+    .card { background:var(--card); border:1px solid var(--muted); border-radius:12px; padding:1rem; margin-top:1rem; }
+    table { width:100%; border-collapse:collapse; margin-top:1rem; font-size:.95rem; }
+    th, td { border:1px solid var(--muted2); padding:.55rem .6rem; }
+    th { background:#333; text-align:left; }
+    td { color:var(--text); }
+    .row { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.8rem; }
+    button { cursor:pointer; border:none; border-radius:8px; padding:.6rem 1rem; font-weight:700; }
+    .primary { background:var(--accent); color:var(--text); }
+    .primary:hover { filter:brightness(.93); }
+    .ghost { background:#444; color:var(--text); }
+    .ghost:hover { background:#555; }
+    .totals { display:flex; gap:1rem; flex-wrap:nowrap; margin-top:1rem; }
+    @media (max-width: 780px){.totals {flex-wrap: wrap;}}
+    .pill { flex:1 1 0; min-width:200px; background:#333; border:1px solid var(--muted2); border-radius:8px; padding:.6rem; }
+    .pill .label { font-size:.85rem; color:#bbb; }
+    .pill .value { font-size:1.2rem; font-weight:700; }
+    footer { text-align:center; margin:2rem 0; font-size:0.85rem; color:#ccc; border-top:1px solid var(--muted); padding-top:1rem; }
+    a.back-btn { display:inline-block; margin-top:1rem; padding:.6rem 1rem; border-radius:8px; text-decoration:none; background:#444; color:var(--text); font-weight:700; }
+    a.back-btn:hover { background:#555; }
+    textarea { width:100%; min-height:160px; background:#333; color:var(--text); border:1px solid var(--muted2); border-radius:6px; padding:.6rem; }
+    .center { text-align:center; }
+    /* visueel effect voor aangevinkte rij */
+    tr.done td:not(:first-child){ opacity:.7; text-decoration:line-through; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="Cruisin Craftsmen">
+    <h1>Cosmetics overzicht</h1>
+    <p>Plak hieronder de cosmetica-tekst en zet om naar een duidelijk, gesorteerd overzicht.</p>
+  </header>
+
+  <div class="wrap">
+    <section class="card">
+      <textarea id="input" placeholder="Voorbeeld:
+Uitlaten - [ 8. Alt. Titanium Tuner Exhaust ], Koffers - [ 5. Premium Wall of Sound (Neon) ], Livery - [ 9. Die Hard ], ..."></textarea>
+
+      <div class="row">
+        <button id="convert" class="primary">Zet om naar tabel</button>
+        <button id="reset" class="ghost">Reset</button>
+      </div>
+
+      <div class="totals">
+  <div class="pill">
+    <div class="label">Aantal items</div>
+    <div class="value"><span id="count">0</span></div>
+  </div>
+  <div class="pill">
+    <div class="label">Totaal (aantal × €400)</div>
+    <div class="value">€ <span id="total">0</span></div>
+  </div>
+  <div class="pill">
+    <div class="label">Toegepast (vinkjes)</div>
+    <div class="value"><span id="applied">0</span> / <span id="applied-total">0</span></div>
+  </div>
+  <div class="pill">
+    <div class="label">Bedrag toegepast (vinkjes × €400)</div>
+    <div class="value">€ <span id="applied-amount">0</span></div>
+  </div>
+</div>
+
+      <div id="output"></div>
+    </section>
+  </div>
+
+  <footer>
+    <p>🔧 Deze tool is gemaakt voor de <b>Eldorado RP</b> FiveM server.</p>
+    <p>💻 Ontwikkeling & HTML door ChatGPT samen met de Cruisin Craftsmen crew 🚗</p>
+    <p>Laatst geüpdatet door Pinkiie op 16-09-2025 om 14:00</p>
+    <p><a href="index.html" class="back-btn">⬅️ Terug naar startpagina</a></p>
+  </footer>
+
+  <script>
+  // Format euro zonder decimalen (nl-NL scheiding met punten)
+  const euro = n => (n||0).toLocaleString('nl-NL',{minimumFractionDigits:0, maximumFractionDigits:0});
+
+  /* ========== CATEGORIEËN (alfabetisch per groep) ========== */
+  /* ========== CATEGORIEËN (gekuist) ========== */
+const CATEGORIES = {
+  /* ---------- Binnenkant Cosmetica ---------- */
+  "Stoelen": "Stoel Cosmetics",
+  "Stuurwielen": "Binnenkant cosmetica",
+  "Trim A": "Binnenkant cosmetica",
+  "Trim B": "Binnenkant cosmetica",
+  "Deurluidsprekers": "Binnenkant cosmetica",
+  "Ornamenten": "Binnenkant cosmetica",
+  "Wijzerplaten": "Binnenkant cosmetica",
+  "Schakelpookknoppen": "Binnenkant cosmetica",
+  "Platen": "Binnenkant cosmetica",
+  "Luidsprekers": "Binnenkant cosmetica",
+
+  /* ---------- Buitenkant Cosmetica ---------- */
+  "Afwerking A": "Buitenkant cosmetica",
+  "Afwerking B": "Buitenkant cosmetica",
+  "Koffers": "Buitenkant cosmetica",
+  "Luchtfilters": "Buitenkant cosmetica",
+  "Motorblokken": "Buitenkant cosmetica",
+  "Dashboards": "Buitenkant cosmetica",
+  "Motorsteunen": "Buitenkant cosmetica",
+  "Antennes": "Buitenkant cosmetica",
+  "Extras": "Buitenkant cosmetica",
+  "Brandstoftanks": "Buitenkant cosmetica",
+  "Kofferbak": "Buitenkant cosmetica",
+  "Motorblok": "Buitenkant cosmetica",
+  "Filter": "Buitenkant cosmetica",
+  "Hydraulica": "Buitenkant cosmetica",
+
+  /* ---------- Carrosserie / Exterior ---------- */
+  "Achterbumpers": "Bumper",
+  "Dak": "Voertuigdak",
+  "Motorkappen": "Motorkap",
+  "Roosters": "Bumper",
+  "Spoilers": "Spoiler",
+  "Voorbumpers": "Bumper",
+  "Raam Tints": "Ramentinten",
+
+  /* ---------- Nummerplaten ---------- */
+  "Borden": "Aangepast kentekenplaat",
+  "Kentekenhouder": "Aangepast kentekenplaat",
+  "Vanity kenteken": "Aangepast kentekenplaat",
+  "Platenhouders": "Aangepast kentekenplaat",
+
+  /* ---------- Rollcage / Chassis ---------- */
+  "Rolkooien": "Rollcage",
+
+  /* ---------- Skirts / Spatborden ---------- */
+  "Linker Spatbord": "Skirts",
+  "Rechter spatbord": "Skirts",
+  "Skirts": "Skirts",
+
+  /* ---------- Spuitbussen / Kleuren ---------- */
+  "Dashboard": "Spuitbussen",
+  "Interieur": "Spuitbussen",
+  "Livery": "Bestickering",
+  "Parelmoer": "Spuitbussen",
+  "Primair": "Spuitbussen",
+  "Secundair": "Spuitbussen",
+  "Velg": "Spuitbussen",
+
+  /* ---------- Uitlaat ---------- */
+  "Uitlaten": "Uitlaat",
+
+  /* ---------- Wielen ---------- */
+  "Back Wheels": "Custom Velgen",
+  "Wheels": "Custom Velgen"
+};
+
+  // Case-insensitive lookup + value-based uitzonderingen
+const CATEGORIES_LC = Object.fromEntries(
+  Object.entries(CATEGORIES).map(([k, v]) => [k.toLowerCase(), v])
+);
+
+// --- OVERRIDES OP BASIS VAN VALUE (Optie-tekst) ---
+// Elke regel heeft een RegExp die op de optie-tekst matcht (case-insensitive).
+// Als er een match is, OVERRIDET dit de standaard categorie.
+const VALUE_OVERRIDES = [
+  // bestaande wens:
+  { test: /(^|\b)fender\s*vents?(\b|$)/i, category: "Buitenkant cosmetica" },
+  { test: /fake\s*fender\s*vents?/i,       category: "Buitenkant cosmetica" },
+  { test: /iridescent\s*headlight\s*glass?/i, category: "Buitenkant cosmetica"},
+
+  // --- voorbeelden/ideetjes om snel uit te breiden ---
+  // { test: /window\s*tints?/i,             category: "Ramentinten" },
+  // { test: /(drift\s*wing|big\s*spoiler)/i, category: "Spoiler" },
+  // { test: /roll\s*cage|chassis\s*upgrade/i,category: "Rollcage" },
+  // { test: /neon|underglow/i,               category: "Buitenkant cosmetica" },
+];
+
+// Haal categorie op met overrides op value; zo’n override wint altijd.
+function getCategory(key, val) {
+  // 1) Probeer eerst overrides op de value (Optie)
+  if (val) {
+    const v = String(val).toLowerCase();
+    for (const rule of VALUE_OVERRIDES) {
+      if (rule.test.test(v)) return rule.category;
+    }
+  }
+
+  // 2) Anders de gewone key->categorie mapping
+  if (CATEGORIES[key]) return CATEGORIES[key];
+
+  // 3) Fallback
+  return "Nog te bepalen";
+}
+
+  // Split op komma's die NIET binnen [ ] staan
+  function splitTopLevel(input) {
+    const out = [];
+    let buf = '', depth = 0;
+    for (let i = 0; i < input.length; i++) {
+      const ch = input[i];
+      if (ch === '[') depth++;
+      if (ch === ']') depth = Math.max(0, depth - 1);
+      if (ch === ',' && depth === 0) { out.push(buf); buf = ''; }
+      else { buf += ch; }
+    }
+    if (buf.trim()) out.push(buf);
+    return out.map(s => s.trim()).filter(Boolean);
+  }
+
+  function parseEntry(entry) {
+    const sep = entry.indexOf(' - ');
+    if (sep === -1) return null;
+    let key = entry.slice(0, sep).trim();
+    let val = entry.slice(sep + 3).trim();
+    if (val.startsWith('[') && val.endsWith(']')) val = val.slice(1, -1).trim();
+    key = key.replace(/\s+/g, ' ').trim();
+    val = val.replace(/\s+/g, ' ').trim();
+    return { key, val };
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#039;');
+  }
+
+  // Tabel renderen: sorteer op Categorie, dan Onderdeel
+  function renderTable(rows) {
+    if (!rows.length) return '<p class="small">Geen geldige items gevonden.</p>';
+
+    const sorted = [...rows].sort((a, b) => {
+      const ac = (a.cat || 'Nog te bepalen');
+      const bc = (b.cat || 'Nog te bepalen');
+      const byCat = ac.localeCompare(bc, 'nl', { sensitivity: 'base' });
+      if (byCat !== 0) return byCat;
+      return a.key.localeCompare(b.key, 'nl', { sensitivity: 'base' });
+    });
+
+    const body = sorted.map(({ key, val, cat }) => `
+      <tr>
+        <td class="center"><input type="checkbox" class="mark"></td>
+        <td>${escapeHtml(key)}</td>
+        <td>${escapeHtml(val || '—')}</td>
+        <td>${escapeHtml(cat || 'Nog te bepalen')}</td>
+      </tr>
+    `).join('');
+
+    return `
+      <table id="cosm-table">
+        <thead>
+          <tr>
+            <th class="center">✅</th>
+            <th>Onderdeel</th>
+            <th>Optie</th>
+            <th>Categorie</th>
+          </tr>
+        </thead>
+        <tbody>${body}</tbody>
+      </table>`;
+  }
+
+  // Teller voor aangevinkte rijen
+  function updateAppliedCounts() {
+    const tbody = document.querySelector('#cosm-table tbody');
+    if (!tbody) {
+      document.getElementById('applied').textContent = '0';
+      document.getElementById('applied-total').textContent = '0';
+      document.getElementById('applied-amount').textContent = '0';
+      return;
+    }
+    const total = tbody.querySelectorAll('tr').length;
+    const checked = tbody.querySelectorAll('input.mark:checked').length;
+    const amount = checked * 400;
+    document.getElementById('applied').textContent = String(checked);
+    document.getElementById('applied-total').textContent = String(total);
+    document.getElementById('applied-amount').textContent = euro(amount);
+  }
+
+  // Convert
+  document.getElementById('convert').onclick = () => {
+    const input = document.getElementById('input').value.trim();
+    if (!input) return;
+
+    const entries = splitTopLevel(input)
+      .map(parseEntry)
+      .filter(Boolean);
+
+    const rows = entries.map(({key, val}) => ({
+      key,
+      val,
+      cat: getCategory(key, val)
+    }));
+
+
+    // render tabel
+    document.getElementById('output').innerHTML = renderTable(rows);
+
+    // aantal & totaal (€400 per item)
+    const count = rows.length;
+    const total = count * 400;
+    document.getElementById('count').textContent = count.toString();
+    document.getElementById('total').textContent = euro(total);
+
+    // checkbox gedrag + teller
+    const tbody = document.querySelector('#cosm-table tbody');
+    tbody.addEventListener('change', (e) => {
+      if (e.target && e.target.classList.contains('mark')) {
+        const tr = e.target.closest('tr');
+        if (tr) tr.classList.toggle('done', e.target.checked);
+        updateAppliedCounts();
+      }
+    });
+
+    // initialiseer teller
+    updateAppliedCounts();
+  };
+
+  // Reset
+  document.getElementById('reset').onclick = () => {
+    document.getElementById('input').value = '';
+    document.getElementById('output').innerHTML = '';
+    document.getElementById('count').textContent = '0';
+    document.getElementById('total').textContent = '0';
+    document.getElementById('applied').textContent = '0';
+    document.getElementById('applied-total').textContent = '0';
+    document.getElementById('applied-amount').textContent = '0';
+  };
+
+  // Click to toggle
+  document.addEventListener('click', (e) => {
+    const tr = e.target.closest('#cosm-table tbody tr');
+    if (!tr) return;
+    const cb = tr.querySelector('input.mark');
+    if (e.target !== cb) { cb.checked = !cb.checked; tr.classList.toggle('done', cb.checked); updateAppliedCounts(); }
+  });
+
+    
+  </script>
+</body>
+</html>
