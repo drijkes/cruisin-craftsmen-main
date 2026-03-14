@@ -3,26 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bereken-tool • Aankoop & Recycling materialen</title>
+  <title>Bereken-tool • Cruisin Craftsmen</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; background: #1e1e1e; color: #FEFEF3; }
     header { text-align: center; padding: 2rem 1rem 1rem; }
     header h1 { margin: 0; font-size: 1.8rem; color: #FEFEF3;}
-    header p { color: #FEFEF3;}
     .logo { max-width: 400px; margin-bottom: 1rem;}
     .wrap { max-width: 960px; margin: 0 auto; padding: 1rem; }
     .card { background: #2a2a2a; border: 1px solid #444; border-radius: 12px; padding: 1rem; margin-top: 1rem; }
-    .card h2 { margin-top: 0; }
     .grid { display: grid; grid-template-columns: 1.2fr 0.8fr 1fr; gap: 10px; align-items: end; }
     .grid .head { font-size: .8rem; color: #FEFEF3; font-weight: 600; }
-    .price { color: #bbb; font-size: 0.9rem; font-weight: 500; opacity: 1;}
-    label { font-weight: 600; }
-    input[type="number"] { background: #333; color: #FEFEF3; border: 1px solid #555; width: 100%; padding: .4rem; font-size: 1rem; border-radius: 6px; }
+    .price { color: #bbb; font-size: 0.9rem; font-weight: 500; }
+    
+    /* Input styling zonder pijltjes */
+    input[type="number"], input[type="text"], input[type="password"] { 
+        background: #333; color: #FEFEF3; border: 1px solid #555; width: 100%; padding: .4rem; 
+        font-size: 1rem; border-radius: 6px; box-sizing: border-box; 
+        -moz-appearance: textfield; /* Firefox */
+    }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { 
+        -webkit-appearance: none; margin: 0; /* Chrome, Safari, Edge */
+    }
+
     input[disabled] { background: #444; color: #888; }
-    .sub { text-align: right; }
+    .sub { text-align: right; font-weight: bold; color: #A82B2D; }
     button { cursor: pointer; border: none; border-radius: 8px; padding: .6rem 1rem; font-weight: 700; margin-top: .8rem; }
     .primary { background: #A82B2D; color: #FEFEF3; }
-    .primary:hover { background: #8f2426; }
     .ghost { background: #444; color: #FEFEF3; }
     .results { margin-top: 1rem; }
     .totals { display: flex; gap: 1rem; flex-wrap: wrap; }
@@ -30,408 +36,198 @@
     .pill .label { font-size: .8rem; color: #bbb; }
     .pill .value { font-size: 1.2rem; font-weight: bold; color: #FEFEF3; }
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: .9rem; }
-    td { color: #FEFEF3; }
     th, td { border: 1px solid #eee; padding: .4rem; }
-    th { background: #333; color: #FEFEF3; text-align: left; }
+    th { background: #333; text-align: left; }
     .right { text-align: right; }
-    .switch { margin: .5rem 0; font-size: .9rem; }
-    .fade-msg { opacity: 0; transition: opacity 0.4s ease; color: #ffcc00; font-size: .85rem; margin-left: .5rem; }
-    .fade-msg.show { opacity: 1; }
-    a.back-btn {display:inline-block; margin-top: 1rem; padding: .6rem 1rem; border-radius: 8px; text-decoration: none; background: #444; color: #FEFEF3; font-weight: 700;}
-    a.back-btn:hover { background: #555;}
-
+    #login-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; }
+    .login-card { background: #2a2a2a; padding: 2rem; border-radius: 12px; border: 1px solid #A82B2D; width: 320px; text-align: center; }
   </style>
 </head>
 <body>
+
 <header>
   <img src="logo.png" alt="Cruisin Craftsmen" class="logo">
   <h1>Inkoop & Recycling — Berekentool</h1>
-  <p>Vul aantallen in per item en klik op <b>Bereken</b>. Alle prijzen in EUR per stuk.</p>
 </header>
 
 <div class="wrap">
-
-  <!-- Sectie 1: Aankoop materialen -->
-  <section class="card" id="aankoop">
+  <section class="card">
     <h2>Aankoop materialen</h2>
-    <p class="switch">
-      <input type="checkbox" id="approve-extra"> Goedkeuring van manager voor plastic, glas en koper
-    </p>
-
-    <div class="grid">
-      <div class="head">Item</div>
-      <div class="head">Aantal</div>
-      <div class="head right">Prijs</div>
-
-      <div><label for="aluminium">Aluminium</label><div class="price">€10 / stuk</div></div>
-      <div><input id="aluminium" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-aluminium">0</span></div>
-
-      <div><label for="carparts">Car parts</label><div class="price">€25 / stuk</div></div>
-      <div><input id="carparts" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-carparts">0</span></div>
-
-      <div><label for="craftparts">Craft parts</label><div class="price">€25 / stuk</div></div>
-      <div><input id="craftparts" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-craftparts">0</span></div>
-
-      <!-- <div><label for="elektronischschroot">Elektronisch Schroot</label><div class="price">€10 / stuk</div></div>
-      <div><input id="elektronischschroot" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-elektronischschroot">0</span></div> -->
-      
-      <div><label for="ijzer">Ijzer</label><div class="price">€20 / stuk</div></div>
-      <div><input id="ijzer" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-ijzer">0</span></div>
-
-      <div><label for="metaalschroot">Metaalschroot</label><div class="price">€20 / stuk</div></div>
-      <div><input id="metaalschroot" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-metaalschroot">0</span></div>
-
-      <div><label for="rubber">Rubber</label><div class="price">€20 / stuk</div></div>
-      <div><input id="rubber" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-rubber">0</span></div>
-
-      <div><label for="staal">Staal</label><div class="price">€20 / stuk</div></div>
-      <div><input id="staal" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-staal">0</span></div>
-
-      <!-- €10 (restricted) -->
-
-      <div><label for="glas">Glas</label><div class="price">€10 / stuk</div></div>
-      <div><input id="glas" type="number" min="0" value="0" disabled></div>
-      <div class="sub">€<span id="sub-glas">0</span></div>
-
-      <div><label for="elektronischschroot">Elektronisch Schroot</label><div class="price">€10 / stuk</div></div>
-      <div><input id="elektronischschroot" type="number" min="0" value="0" disabled></div>
-      <div class="sub">€<span id="sub-elektronischschroot">0</span></div>
-
-      <div><label for="koper">Koper</label><div class="price">€10 / stuk</div></div>
-      <div><input id="koper" type="number" min="0" value="0" disabled></div>
-      <div class="sub">€<span id="sub-koper">0</span></div>
-
-      <div><label for="plastic">Plastic</label><div class="price">€10 / stuk</div></div>
-      <div><input id="plastic" type="number" min="0" value="0" disabled></div>
-      <div class="sub">€<span id="sub-plastic">0</span></div>
-    </div>
-
+    <p><input type="checkbox" id="approve-extra"> Manager goedkeuring</p>
+    <div class="grid" id="container-aankoop">
+      <div class="head">Item</div><div class="head">Aantal</div><div class="head right">Subtotaal</div>
+      </div>
     <button class="primary" id="btn-aankoop">Bereken aankoop</button>
-    <button class="ghost" id="btn-reset-aankoop">Reset aankoop</button>
+    <button class="ghost" id="btn-reset-aankoop">Reset</button>
 
     <div class="results" id="res-aankoop" hidden>
-      <div class="totals">
-        <div class="pill"><div class="label">Subtotaal aankoop</div><div class="value">€ <span id="sum-aankoop">0</span></div></div>
-        <div class="pill"><div class="label">Aantal items</div><div class="value"><span id="cnt-aankoop">0</span></div></div>
-      </div>
+      <div class="totals"><div class="pill"><div class="label">Subtotaal Aankoop</div><div class="value" id="disp-sum-aankoop">€ 0</div></div></div>
       <table>
-        <thead><tr><th>Item</th><th class="right">Aantal</th><th class="right">Prijs/stuk</th><th class="right">Subtotaal</th></tr></thead>
+        <thead><tr><th>Item</th><th class="right">Aantal</th><th class="right">Prijs/st.</th><th class="right">Totaal</th></tr></thead>
         <tbody id="rows-aankoop"></tbody>
       </table>
     </div>
   </section>
 
-  <!-- Sectie 2: Recycling -->
-  <section class="card" id="recycling">
-    <h2>Recycling materialen</h2>
-    <div class="grid">
-      <div class="head">Item</div>
-      <div class="head">Aantal</div>
-      <div class="head right">Prijs</div>
-
-      <div><label for="telefoons">Gebroken telefoons</label><div class="price">€10 / stuk</div></div>
-      <div><input id="telefoons" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-telefoons">0</span></div>
-
-      <div><label for="radios">Gebroken radio's</label><div class="price">€10 / stuk</div></div>
-      <div><input id="radios" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-radios">0</span></div>
-
-      <div><label for="blikjes">Lege blikjes</label><div class="price">€10 / stuk</div></div>
-      <div><input id="blikjes" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-blikjes">0</span></div>
-
-      <div><label for="banden">Versleten fietsbanden</label><div class="price">€10 / stuk</div></div>
-      <div><input id="banden" type="number" min="0" value="0"></div>
-      <div class="sub">€<span id="sub-banden">0</span></div>
-    </div>
-
+  <section class="card">
+    <h2>Recycling</h2>
+    <div class="grid" id="container-recycling">
+      <div class="head">Item</div><div class="head">Aantal</div><div class="head right">Subtotaal</div>
+      </div>
     <button class="primary" id="btn-recycling">Bereken recycling</button>
-    <button class="ghost" id="btn-reset-recycling">Reset recycling</button>
+    <button class="ghost" id="btn-reset-recycling">Reset</button>
 
     <div class="results" id="res-recycling" hidden>
-      <div class="totals">
-        <div class="pill"><div class="label">Subtotaal recycling</div><div class="value">€ <span id="sum-recycling">0</span></div></div>
-        <div class="pill"><div class="label">Aantal items</div><div class="value"><span id="cnt-recycling">0</span></div></div>
-      </div>
+      <div class="totals"><div class="pill"><div class="label">Subtotaal Recycling</div><div class="value" id="disp-sum-recycling">€ 0</div></div></div>
       <table>
-        <thead><tr><th>Item</th><th class="right">Aantal</th><th class="right">Prijs/stuk</th><th class="right">Subtotaal</th></tr></thead>
+        <thead><tr><th>Item</th><th class="right">Aantal</th><th class="right">Prijs/st.</th><th class="right">Totaal</th></tr></thead>
         <tbody id="rows-recycling"></tbody>
       </table>
     </div>
   </section>
 
-  <!-- Algemeen totaal -->
   <section class="card">
-    <h2>Totaal</h2>
+    <h2>Totaal uitbetalen</h2>
     <div class="totals">
-      <div class="pill"><div class="label">Bedrag totaal</div><div class="value">€ <span id="sum-total">0</span></div></div>
-      <div class="pill"><div class="label">Aantal totaal</div><div class="value"><span id="cnt-total">0</span></div></div>
+      <div class="pill"><div class="label">Eindbedrag</div><div class="value" id="disp-sum-total" style="color:#A82B2D; font-size:1.8rem;">€ 0</div></div>
     </div>
-
-    <button class="ghost" id="btn-copy-message">📋 Kopieer bericht naar klant</button>
-    <small id="msg-copied" class="fade-msg">Bericht gekopieerd!</small>
-    <br>
-
-    <button class="ghost" id="btn-copy-total">📋 Kopieer totaal om klant uit te betalen</button>
-    <small id="copy-msg" class="fade-msg">Totaal gekopieerd!</small>
-    <br>
-
-    <button class="ghost" id="btn-reset-all">🔄 Reset alles</button>
+    <button class="ghost" id="btn-copy-total">📋 Kopieer bedrag</button>
+    <button class="ghost" onclick="location.reload()">🔄 Alles Wissen</button>
   </section>
 
+  <div style="text-align:center; margin: 3rem 0;">
+    <button class="ghost" onclick="toggleLogin(true)" style="opacity:0.6;">🛠️ Beheer Login</button>
+  </div>
+
+  <section class="card" id="admin-panel" style="display:none; border: 2px solid #A82B2D;">
+    <h2>⚙️ Prijzen Aanpassen</h2>
+    <div id="price-edit-grid" class="grid" style="grid-template-columns: 1fr 1fr;"></div>
+    <button class="primary" id="btn-save-prices" style="width:100%;">💾 Wijzigingen Opslaan</button>
+  </section>
+</div>
+
+<div id="login-overlay">
+  <div class="login-card">
+    <h2>Manager Login</h2>
+    <input type="text" id="user-login" placeholder="Gebruikersnaam" style="margin-bottom:10px;">
+    <input type="password" id="pass-login" placeholder="Wachtwoord" style="margin-bottom:10px;">
+    <button class="primary" id="btn-auth" style="width:100%;">Inloggen</button>
+    <button class="ghost" onclick="toggleLogin(false)" style="width:100%;">Sluiten</button>
+  </div>
 </div>
 
 <script>
-const euro = n => (n||0).toLocaleString('nl-NL',{minimumFractionDigits:0,maximumFractionDigits:0});
-const parseEuro = (s) => {
-  if (!s) return 0;
-  return parseFloat(String(s).replace(/\./g, '').replace(',', '.')) || 0;
-};
-
-// nette labels per ID
 const LABELS = {
-  ijzer: "Ijzer",
-  staal: "Staal",
-  aluminium: "Aluminium",
-  carparts: "Car parts",
-  craftparts: "Craft parts",
-  elektronischschroot: "Elektronisch schroot",
-  metaalschroot: "Metaalschroot",
-  rubber: "Rubber",
-  plastic: "Plastic",
-  glas: "Glas",
-  koper: "Koper",
-  banden: "Versleten fietsbanden",
-  blikjes: "Lege blikjes",
-  telefoons: "Gebroken telefoons",
-  radios: "Gebroken radio's"
-};
-  
-// prijzen
-const PRICES = {
-  aankoop: {
-    ijzer:20, staal:20,
-    aluminium:10, carparts:25, metaalschroot:20, rubber:20, craftparts:25, elektronischschroot:10,
-    plastic:10, glas:10, koper:10
-  },
-  recycling: { banden:10, blikjes:10, telefoons:10, radios:10 }
+    ijzer:"Ijzer", staal:"Staal", aluminium:"Aluminium", carparts:"Car parts", craftparts:"Craft parts",
+    elektronischschroot:"Elek. Schroot", metaalschroot:"Metaalschroot", rubber:"Rubber", 
+    plastic:"Plastic", glas:"Glas", koper:"Koper",
+    banden:"Fietsbanden", blikjes:"Blikjes", telefoons:"Telefoons", radios:"Radio's"
 };
 
-// goedkeuring toggle
-const approveExtra = document.getElementById('approve-extra');
-const restrictedIds = ["plastic","glas","koper", "elektronischschroot"];
-approveExtra.addEventListener('change',()=>{
-  restrictedIds.forEach(id=>{
-    const input=document.getElementById(id);
-    input.disabled=!approveExtra.checked;
-    if(!approveExtra.checked){
-      input.value=0;
-      document.getElementById(`sub-${id}`).textContent="0";
-    }
-  });
-});
+const RESTRICTED = ["plastic", "glas", "koper", "elektronischschroot"];
+const defaultPrices = {
+    aankoop: { ijzer:20, staal:20, aluminium:10, carparts:25, metaalschroot:20, rubber:20, craftparts:25, elektronischschroot:10, plastic:10, glas:10, koper:10 },
+    recycling: { banden:10, blikjes:10, telefoons:10, radios:10 }
+};
 
-// berekenen sectie
-function compute(section){
-  const prices=PRICES[section]; let sum=0,count=0; let rows=[];
-  for(const id in prices){
-    const input=document.getElementById(id);
-    if(!input) continue;
-    if(restrictedIds.includes(id) && !approveExtra.checked){
-      document.getElementById(`sub-${id}`).textContent="0";
-      continue;
-    }
-    const qty=parseInt(input.value)||0;
-    const sub=qty*prices[id];
-    sum+=sub; count+=qty;
-    document.getElementById(`sub-${id}`).textContent=euro(sub);
-    if(qty>0){ rows.push([id,qty,prices[id],sub]); }
-  }
-  return {sum,count,rows};
+let PRICES = JSON.parse(localStorage.getItem('cc_prijzen')) || defaultPrices;
+
+function buildUI() {
+    renderGrid('aankoop', 'container-aankoop');
+    renderGrid('recycling', 'container-recycling');
 }
 
-// render tabel
-function renderRows(section,data){
-  const tbody=document.getElementById(`rows-${section}`);
-  tbody.innerHTML="";
-  data.forEach(([id,qty,price,sub])=>{
-    const tr=document.createElement("tr");
-    const label = LABELS[id] || id;
-    tr.innerHTML = `
-      <td>${label}</td>
-      <td class="right">${qty}</td>
-      <td class="right">€${euro(price)}</td>
-      <td class="right">€${euro(sub)}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+function renderGrid(sec, containerId) {
+    const cont = document.getElementById(containerId);
+    const heads = ` <div class="head">Item</div><div class="head">Aantal</div><div class="head right">Subtotaal</div>`;
+    let html = heads;
+
+    for (let id in PRICES[sec]) {
+        const isRestricted = RESTRICTED.includes(id);
+        html += `
+            <div><label>${LABELS[id]}</label><div class="price" id="lbl-${id}">€${PRICES[sec][id]} / stuk</div></div>
+            <div><input id="${id}" type="number" value="0" ${isRestricted ? 'disabled' : ''} oninput="calculateRow('${sec}', '${id}')"></div>
+            <div class="sub" id="sub-${id}">€ 0</div>
+        `;
+    }
+    cont.innerHTML = html;
 }
 
-// Aankoop
-document.getElementById('btn-aankoop').onclick=()=>{
-  const {sum,count,rows}=compute('aankoop');
-  document.getElementById('sum-aankoop').textContent=euro(sum);
-  document.getElementById('cnt-aankoop').textContent=count;
-  renderRows('aankoop',rows);
-  document.getElementById('res-aankoop').hidden=false;
-  updateTotal();
-};
-
-document.getElementById('btn-reset-aankoop').onclick=()=>{
-  Object.keys(PRICES.aankoop).forEach(id=>{
-    const input=document.getElementById(id);
-    if(input){
-      input.value=0;
-      document.getElementById(`sub-${id}`).textContent="0";
-    }
-  });
-  approveExtra.checked=false;
-  restrictedIds.forEach(id=>document.getElementById(id).disabled=true);
-
-  // sectie-samenvatting leegmaken
-  document.getElementById('sum-aankoop').textContent = "0";
-  document.getElementById('cnt-aankoop').textContent = "0";
-  document.getElementById('rows-aankoop').innerHTML = "";
-  document.getElementById('res-aankoop').hidden = true;
-
-  updateTotal();
-};
-
-// Recycling
-document.getElementById('btn-recycling').onclick=()=>{
-  const {sum,count,rows}=compute('recycling');
-  document.getElementById('sum-recycling').textContent=euro(sum);
-  document.getElementById('cnt-recycling').textContent=count;
-  renderRows('recycling',rows);
-  document.getElementById('res-recycling').hidden=false;
-  updateTotal();
-};
-
-document.getElementById('btn-reset-recycling').onclick=()=>{
-  Object.keys(PRICES.recycling).forEach(id=>{
-    const input=document.getElementById(id);
-    if(input){
-      input.value=0;
-      document.getElementById(`sub-${id}`).textContent="0";
-    }
-  });
-
-  // sectie-samenvatting leegmaken
-  document.getElementById('sum-recycling').textContent = "0";
-  document.getElementById('cnt-recycling').textContent = "0";
-  document.getElementById('rows-recycling').innerHTML = "";
-  document.getElementById('res-recycling').hidden = true;
-
-  updateTotal();
-};
-
-// totaal
-function updateTotal(){
-  const a = parseEuro(document.getElementById('sum-aankoop').textContent);
-  const r = parseEuro(document.getElementById('sum-recycling').textContent);
-
-  const ca = parseInt(document.getElementById('cnt-aankoop').textContent || "0", 10) || 0;
-  const cr = parseInt(document.getElementById('cnt-recycling').textContent || "0", 10) || 0;
-
-  document.getElementById('sum-total').textContent = euro(a + r);
-  document.getElementById('cnt-total').textContent = (ca + cr).toString();
+function calculateRow(sec, id) {
+    const qty = parseInt(document.getElementById(id).value) || 0;
+    const price = PRICES[sec][id];
+    document.getElementById(`sub-${id}`).textContent = "€ " + (qty * price).toLocaleString('nl-NL');
 }
 
-// enter-to-bereken
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    if (document.activeElement.closest('#aankoop')) {
-      document.getElementById('btn-aankoop').click();
-    } else if (document.activeElement.closest('#recycling')) {
-      document.getElementById('btn-recycling').click();
+function calculate(sec) {
+    let sum = 0;
+    const tbody = document.getElementById(`rows-${sec}`);
+    tbody.innerHTML = "";
+    for (let id in PRICES[sec]) {
+        const qty = parseInt(document.getElementById(id).value) || 0;
+        const price = PRICES[sec][id];
+        if (qty > 0) {
+            const sub = qty * price;
+            sum += sub;
+            tbody.innerHTML += `<tr><td>${LABELS[id]}</td><td class="right">${qty}</td><td class="right">€${price}</td><td class="right">€${sub.toLocaleString('nl-NL')}</td></tr>`;
+        }
     }
-  }
-});
+    document.getElementById(`disp-sum-${sec}`).textContent = "€ " + sum.toLocaleString('nl-NL');
+    document.getElementById(`res-${sec}`).hidden = (sum === 0);
+    updateTotal();
+}
 
-// reset alles
-document.getElementById('btn-reset-all').onclick = () => {
-  document.getElementById('btn-reset-aankoop').click();
-  document.getElementById('btn-reset-recycling').click();
+function updateTotal() {
+    const s1 = parseInt(document.getElementById('disp-sum-aankoop').textContent.replace(/\D/g, '')) || 0;
+    const s2 = parseInt(document.getElementById('disp-sum-recycling').textContent.replace(/\D/g, '')) || 0;
+    document.getElementById('disp-sum-total').textContent = "€ " + (s1 + s2).toLocaleString('nl-NL');
+}
+
+// LOGIN & ADMIN
+function toggleLogin(s) { document.getElementById('login-overlay').style.display = s ? 'flex' : 'none'; }
+document.getElementById('btn-auth').onclick = () => {
+    if (document.getElementById('user-login').value === "admin" && document.getElementById('pass-login').value === "Sletco") {
+        toggleLogin(false);
+        document.getElementById('admin-panel').style.display = 'block';
+        const g = document.getElementById('price-edit-grid');
+        g.innerHTML = "";
+        for (let sec in PRICES) {
+            for (let id in PRICES[sec]) {
+                g.innerHTML += `<div>${LABELS[id]}</div><input type="number" class="adm-in" data-sec="${sec}" data-id="${id}" value="${PRICES[sec][id]}">`;
+            }
+        }
+        document.getElementById('admin-panel').scrollIntoView();
+    } else { alert("Fout!"); }
 };
 
-// Kopieer bericht (random variant)
-const messages = [
-`🚗🔧 Cruisin Craftsmen Mechanic ---✦--- 
-Inkoop materialen. Wij danken u hartelijk voor uw bijdrage. 🙏✨`,
-
-`🚗🔧 Cruisin Craftsmen Mechanic ---✦--- 
-Bedankt voor het leveren van materialen! 🙌💪  
-Uw bijdrage houdt de garage draaiende 🔧🔥`,
-
-`🚗🔧 Cruisin Craftsmen Mechanic ---✦--- 
-Jouw materialen zijn geld waard 💰  
-Bedankt voor je bijdrage, wij sleutelen verder 🚗💨`,
-
-`🚗🔧 Cruisin Craftsmen Mechanic ---✦--- 
-Materials in, engines on! 🔧🔥  
-Thanks voor je bijdrage, legend 🙌`,
-
-`🚗🔧 Cruisin Craftsmen Mechanic ---✦--- 
-Met jouw bijdrage loopt de garage gesmeerd 🛠️⚙️  
-Dank voor het vertrouwen! 🙏`,
-
-`🚗🔧 Cruisin Craftsmen Mechanic ---✦--- 
-Topdeal gedaan ✅  
-Bedankt voor het materiaal en tot de volgende keer! 🔧🚙`,
-
-`🚗🔧 Cruisin Craftsmen Mechanic ---✦--- 
-Zonder jouw materialen geen horsepower ⚡🚗  
-Bedankt voor je bijdrage, topper! 🔧🔥`,
-
-`🚗🔧 Cruisin Craftsmen Mechanic ---✦--- 
-Materialen ontvangen 📦  
-Wij waarderen jouw steun enorm 🙏✨`,
-
-`🚗🔧 Cruisin Craftsmen Mechanic ---✦--- 
-Met jouw materiaal kunnen we weer kilometers maken 🚙💨  
-Thanks voor je bijdrage, legend! 🔧🔥`,
-
-`🚗🔧 Cruisin Craftsmen Mechanic ---✦--- 
-Bedankt voor het aanleveren van onderdelen 🔩⚙️  
-Samen houden we de stad rijdend 🚗✨`
-];
-
-document.getElementById('btn-copy-message').onclick = () => {
-  const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-  navigator.clipboard.writeText(randomMsg).then(() => {
-    const msg = document.getElementById('msg-copied');
-    msg.classList.add('show');
-    setTimeout(() => msg.classList.remove('show'), 1500);
-  });
+document.getElementById('btn-save-prices').onclick = () => {
+    document.querySelectorAll('.adm-in').forEach(i => { PRICES[i.dataset.sec][i.dataset.id] = parseInt(i.value) || 0; });
+    localStorage.setItem('cc_prijzen', JSON.stringify(PRICES));
+    buildUI();
+    alert("Opgeslagen!");
+    document.getElementById('admin-panel').style.display = 'none';
 };
 
-// Kopieer totaal (zonder puntjes)
+// ACTIONS
+document.getElementById('btn-aankoop').onclick = () => calculate('aankoop');
+document.getElementById('btn-recycling').onclick = () => calculate('recycling');
+document.getElementById('btn-reset-aankoop').onclick = () => { buildUI(); calculate('aankoop'); };
+document.getElementById('btn-reset-recycling').onclick = () => { buildUI(); calculate('recycling'); };
+
+document.getElementById('approve-extra').onchange = (e) => {
+    RESTRICTED.forEach(id => {
+        const inp = document.getElementById(id);
+        if(inp) inp.disabled = !e.target.checked;
+    });
+};
+
 document.getElementById('btn-copy-total').onclick = () => {
-  const bedrag = document.getElementById('sum-total').textContent.trim();
-  const clean = bedrag.replace(/\./g, ''); // puntjes weg
-  navigator.clipboard.writeText(clean).then(() => {
-    const msg = document.getElementById('copy-msg');
-    msg.classList.add('show');
-    setTimeout(() => msg.classList.remove('show'), 1500);
-  });
+    const val = document.getElementById('disp-sum-total').textContent.replace(/\D/g, '');
+    navigator.clipboard.writeText(val);
+    alert("Gekopieerd: " + val);
 };
+
+buildUI();
 </script>
-
-<footer style="text-align:center; margin:2rem 0; font-size:0.8rem; color:#ccc; border-top:1px solid #444; padding-top:1rem;">
-  <p>🔧 Deze tool is gemaakt voor de <b>Eldorado RP</b> FiveM server.</p>
-  <p>💻 Ontwikkeling & HTML door ChatGPT samen met de Cruisin Craftsmen crew 🚗</p>
-  <p><a href="index.html" class="back-btn">⬅️ Terug naar startpagina</a></p>
-</footer>
-
-
 </body>
 </html>
