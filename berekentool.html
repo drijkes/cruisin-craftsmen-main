@@ -7,11 +7,10 @@
   
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   
   <style>
-    :root{
-      --bg:#1e1e1e; --card:#2a2a2a; --muted:#444; --muted2:#555; --text:#FEFEF3; --accent:#A82B2D;
-    }
     body { font-family: system-ui, sans-serif; margin: 0; background: #1e1e1e; color: #FEFEF3; }
     header { text-align: center; padding: 2rem 1rem 1rem; }
     .logo { max-width: 400px; margin-bottom: 1rem;}
@@ -29,23 +28,16 @@
     button { cursor: pointer; border: none; border-radius: 8px; padding: .8rem 1.2rem; font-weight: 700; margin-top: 1rem; }
     .primary { background: #A82B2D; color: #FEFEF3; width: 100%; }
     .ghost { background: #444; color: #FEFEF3; }
+    .danger { background: #444; color: #ff6b6b; border: 1px solid #ff6b6b; width: 100%; margin-top: 10px; }
     #disp-sum-total { font-size: 2.5rem; color: #A82B2D; font-weight: 900; margin: 1rem 0; text-align: center;}
     #login-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; }
     .login-card { background: #2a2a2a; padding: 2rem; border-radius: 12px; border: 1px solid #A82B2D; width: 320px; text-align: center; }
-    .login-card input { margin-bottom: 15px; background: #1a1a1a; border: 1px solid #444; color: #fff; padding: 10px; width: 100%; border-radius: 6px; }
-
-    /* Footer styling van Cosmetics Tool */
-    footer { text-align: center; margin: 2rem 0; font-size: 0.85rem; color: #ccc; border-top: 1px solid var(--muted); padding-top: 1rem; }
-    a.back-btn { display: inline-block; margin-top: 1rem; padding: .6rem 1rem; border-radius: 8px; text-decoration: none; background: #444; color: var(--text); font-weight: 700; }
-    a.back-btn:hover { background: #555; }
   </style>
 </head>
 <body>
 
 <header>
-  <a href="index.html">
-    <img src="logo.png" alt="Cruisin Craftsmen" class="logo">
-  </a>
+  <img src="logo.png" alt="Cruisin Craftsmen" class="logo">
   <h1>Mechanic Berekentool</h1>
 </header>
 
@@ -55,12 +47,12 @@
       <h2 style="margin:0;">Aankoop</h2>
       <label style="font-size: 0.8rem; color:#bbb;"><input type="checkbox" id="approve-extra"> Manager Accoord</label>
     </div>
-    <div class="grid" id="container-aankoop">Verbinding maken met database...</div>
+    <div class="grid" id="container-aankoop">Database laden...</div>
   </section>
 
   <section class="card">
     <h2 style="margin-bottom: 1rem;">Recycling</h2>
-    <div class="grid" id="container-recycling">Verbinding maken met database...</div>
+    <div class="grid" id="container-recycling">Database laden...</div>
   </section>
 
   <section class="card">
@@ -74,35 +66,31 @@
     </div>
   </section>
 
-  <footer>
-    <p>🔧 Deze tool is gemaakt voor de <b>Eldorado RP</b> FiveM server.</p>
-    <p>💻 Ontwikkeling & HTML door ChatGPT samen met de Cruisin Craftsmen crew 🚗</p>
-    <p><a href="index.html" class="back-btn">⬅️ Terug naar startpagina</a></p>
-  </footer>
-
   <div style="text-align:center; margin-top: 3rem;">
-    <button class="ghost" onclick="toggleLogin(true)" style="font-size:0.7rem; opacity:0.4;">🛠️ BEHEERDER LOGIN</button>
+    <button class="ghost" id="admin-status-btn" onclick="toggleLogin(true)" style="font-size:0.7rem; opacity:0.4;">🛠️ BEHEERDER LOGIN</button>
   </div>
 
   <section class="card" id="admin-panel" style="display:none; border: 2px solid #A82B2D;">
     <h2>⚙️ Prijzen Aanpassen (Live)</h2>
     <div id="price-edit-grid" class="grid" style="grid-template-columns: 1fr 1fr;"></div>
-    <button class="primary" id="btn-save-prices">💾 Prijzen Opslaan voor Team</button>
+    <button class="primary" id="btn-save-prices">💾 Prijzen Opslaan</button>
+    <button class="danger" onclick="firebase.auth().signOut()">🚪 Uitloggen</button>
   </section>
 </div>
 
 <div id="login-overlay">
   <div class="login-card">
     <h3>Beheer</h3>
-    <input type="text" id="user-login" placeholder="Gebruikersnaam">
-    <input type="password" id="pass-login" placeholder="Wachtwoord">
-    <button class="primary" id="btn-auth">Inloggen</button>
-    <button class="ghost" onclick="toggleLogin(false)" style="width:100%;">Sluiten</button>
+    <button class="primary" id="btn-auth" style="background:#4285F4;">🔵 Login met Google</button>
+    <button class="ghost" onclick="toggleLogin(false)" style="width:100%; margin-top:10px;">Sluiten</button>
   </div>
 </div>
 
 <script>
-// --- De rest van je bestaande JavaScript blijft ongewijzigd ---
+const EMAILJS_PUBLIC_KEY = "rOpe9bOgVCSBWRLXm"; 
+const EMAILJS_SERVICE_ID = "service_fgawe2t";       
+const EMAILJS_TEMPLATE_ID = "template_zlg3ne7"; 
+
 const firebaseConfig = {
   apiKey: "AIzaSyBpCPp95sTmIokd4qQxARKAWxFJnKF6Efo",
   authDomain: "cruisin-craftsmen.firebaseapp.com",
@@ -110,28 +98,62 @@ const firebaseConfig = {
   projectId: "cruisin-craftsmen",
   storageBucket: "cruisin-craftsmen.firebasestorage.app",
   messagingSenderId: "169024473632",
-  appId: "1:169024473632:web:628511fc7fafbbe6df8a45",
-  measurementId: "G-JGDGFVM2XS"
+  appId: "1:169024473632:web:628511fc7fafbbe6df8a45"
 };
+
 firebase.initializeApp(firebaseConfig);
+emailjs.init(EMAILJS_PUBLIC_KEY);
+
 const db = firebase.database();
+const auth = firebase.auth();
+const provider = new firebase.auth.GoogleAuthProvider();
 
 const LABELS = { ijzer:"Ijzer", staal:"Staal", aluminium:"Aluminium", carparts:"Car parts", craftparts:"Craft parts", elektronischschroot:"Elek. Schroot", metaalschroot:"Metaalschroot", rubber:"Rubber", plastic:"Plastic", glas:"Glas", koper:"Koper", banden:"Banden", blikjes:"Blikjes", telefoons:"Telefoons", radios:"Radio's" };
 const RESTRICTED = ["plastic", "glas", "koper", "elektronischschroot"];
 let PRICES = {};
 
-db.ref('prices').on('value', (snap) => {
-    PRICES = snap.val();
-    if (!PRICES) {
-        PRICES = {
-            aankoop: { ijzer:20, staal:20, aluminium:10, carparts:25, metaalschroot:20, rubber:20, craftparts:25, elektronischschroot:10, plastic:10, glas:10, koper:10 },
-            recycling: { banden:10, blikjes:10, telefoons:10, radios:10 }
-        };
-        db.ref('prices').set(PRICES);
+auth.onAuthStateChanged(user => {
+    if (user) {
+        const safeEmail = user.email.replace(/\./g, ',');
+        db.ref('whitelist/' + safeEmail).on('value', (snap) => {
+            if (snap.exists() && snap.val() === true) {
+                document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('admin-status-btn').textContent = "✅ BEHEER ACTIEF (" + user.displayName + ")";
+                setupAdminGrid();
+            } else {
+                document.getElementById('admin-panel').style.display = 'none';
+                document.getElementById('admin-status-btn').textContent = "⏳ TOEGANG AANGEVRAAGD";
+            }
+        });
+    } else {
+        document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('admin-status-btn').textContent = "🛠️ BEHEERDER LOGIN";
     }
+});
+
+document.getElementById('btn-auth').onclick = () => {
+    auth.signInWithPopup(provider).then((result) => {
+        const safeEmail = result.user.email.replace(/\./g, ',');
+        db.ref('whitelist/' + safeEmail).once('value', (snap) => {
+            if (!(snap.exists() && snap.val() === true)) {
+                if(confirm("Geen toegang. Wil je een aanvraag sturen naar Joran?")) {
+                    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                        user_name: result.user.displayName,
+                        user_email: result.user.email
+                    }).then(() => alert("Aanvraag verzonden!"), (err) => alert("Fout: " + JSON.stringify(err)));
+                }
+            }
+            toggleLogin(false);
+        });
+    }).catch(err => alert("Fout: " + err.message));
+};
+
+db.ref('prices').on('value', (snap) => {
+    PRICES = snap.val() || {
+        aankoop: { ijzer:20, staal:20, aluminium:10, carparts:25, metaalschroot:20, rubber:20, craftparts:25, elektronischschroot:10, plastic:10, glas:10, koper:10 },
+        recycling: { banden:10, blikjes:10, telefoons:10, radios:10 }
+    };
     renderUI();
-}, (error) => {
-    console.error("Firebase fout:", error);
 });
 
 function renderUI() {
@@ -164,6 +186,32 @@ function updateSums() {
     document.getElementById('disp-sum-total').textContent = "€ " + grandTotal.toLocaleString('nl-NL');
 }
 
+function setupAdminGrid() {
+    const g = document.getElementById('price-edit-grid');
+    if(!g) return;
+    g.innerHTML = "";
+    for (let sec in PRICES) {
+        for (let id in PRICES[sec]) {
+            g.innerHTML += `<div style="padding:10px 0;">${LABELS[id]}</div><input type="number" class="adm-in" data-sec="${sec}" data-id="${id}" value="${PRICES[sec][id]}">`;
+        }
+    }
+}
+
+document.getElementById('btn-save-prices').onclick = () => {
+    document.querySelectorAll('.adm-in').forEach(i => {
+        PRICES[i.dataset.sec][i.dataset.id] = parseInt(i.value) || 0;
+    });
+    db.ref('prices').set(PRICES).then(() => alert("Prijzen opgeslagen!")).catch(() => alert("Geen rechten!"));
+};
+
+function toggleLogin(s) { document.getElementById('login-overlay').style.display = s ? 'flex' : 'none'; }
+
+document.getElementById('btn-copy-total').onclick = () => {
+    const val = document.getElementById('disp-sum-total').textContent.replace(/\D/g, '');
+    navigator.clipboard.writeText(val);
+    alert("Gekopieerd!");
+};
+
 document.addEventListener('change', (e) => {
   if (e.target.id === 'approve-extra') {
     RESTRICTED.forEach(id => {
@@ -175,49 +223,6 @@ document.addEventListener('change', (e) => {
     });
   }
 });
-
-function toggleLogin(s) { document.getElementById('login-overlay').style.display = s ? 'flex' : 'none'; }
-
-// Enter-toets functionaliteit voor inloggen
-[document.getElementById('user-login'), document.getElementById('pass-login')].forEach(input => {
-    input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            document.getElementById('btn-auth').click();
-        }
-    });
-});
-
-document.getElementById('btn-auth').onclick = () => {
-    if (document.getElementById('user-login').value === "admin" && document.getElementById('pass-login').value === "sletco") {
-        toggleLogin(false);
-        document.getElementById('admin-panel').style.display = 'block';
-        const g = document.getElementById('price-edit-grid');
-        g.innerHTML = "";
-        for (let sec in PRICES) {
-            for (let id in PRICES[sec]) {
-                g.innerHTML += `<div style="padding:10px 0;">${LABELS[id]}</div><input type="number" class="adm-in" data-sec="${sec}" data-id="${id}" value="${PRICES[sec][id]}">`;
-            }
-        }
-    } else { alert("Verkeerde login!"); }
-};
-
-document.getElementById('btn-save-prices').onclick = () => {
-    document.querySelectorAll('.adm-in').forEach(i => {
-        PRICES[i.dataset.sec][i.dataset.id] = parseInt(i.value) || 0;
-    });
-    db.ref('prices').set(PRICES).then(() => {
-        alert("Prijzen LIVE aangepast!");
-        document.getElementById('admin-panel').style.display = 'none';
-    }).catch(err => {
-        alert("Fout bij opslaan: " + err.message);
-    });
-};
-
-document.getElementById('btn-copy-total').onclick = () => {
-    const val = document.getElementById('disp-sum-total').textContent.replace(/\D/g, '');
-    navigator.clipboard.writeText(val);
-    alert("Bedrag gekopieerd!");
-};
 </script>
 </body>
 </html>
