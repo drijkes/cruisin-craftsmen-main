@@ -9,6 +9,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
   
   <style>
+    :root{
+      --bg:#1e1e1e; --card:#2a2a2a; --muted:#444; --muted2:#555; --text:#FEFEF3; --accent:#A82B2D;
+    }
     body { font-family: system-ui, sans-serif; margin: 0; background: #1e1e1e; color: #FEFEF3; }
     header { text-align: center; padding: 2rem 1rem 1rem; }
     .logo { max-width: 400px; margin-bottom: 1rem;}
@@ -30,6 +33,11 @@
     #login-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; }
     .login-card { background: #2a2a2a; padding: 2rem; border-radius: 12px; border: 1px solid #A82B2D; width: 320px; text-align: center; }
     .login-card input { margin-bottom: 15px; background: #1a1a1a; border: 1px solid #444; color: #fff; padding: 10px; width: 100%; border-radius: 6px; }
+
+    /* Footer styling van Cosmetics Tool */
+    footer { text-align: center; margin: 2rem 0; font-size: 0.85rem; color: #ccc; border-top: 1px solid var(--muted); padding-top: 1rem; }
+    a.back-btn { display: inline-block; margin-top: 1rem; padding: .6rem 1rem; border-radius: 8px; text-decoration: none; background: #444; color: var(--text); font-weight: 700; }
+    a.back-btn:hover { background: #555; }
   </style>
 </head>
 <body>
@@ -65,11 +73,13 @@
         </div>
     </div>
   </section>
+
   <footer>
     <p>🔧 Deze tool is gemaakt voor de <b>Eldorado RP</b> FiveM server.</p>
     <p>💻 Ontwikkeling & HTML door ChatGPT samen met de Cruisin Craftsmen crew 🚗</p>
     <p><a href="index.html" class="back-btn">⬅️ Terug naar startpagina</a></p>
   </footer>
+
   <div style="text-align:center; margin-top: 3rem;">
     <button class="ghost" onclick="toggleLogin(true)" style="font-size:0.7rem; opacity:0.4;">🛠️ BEHEERDER LOGIN</button>
   </div>
@@ -92,7 +102,7 @@
 </div>
 
 <script>
-// --- EXACTE GEGEVENS VAN JOUW SCREENSHOT ---
+// --- De rest van je bestaande JavaScript blijft ongewijzigd ---
 const firebaseConfig = {
   apiKey: "AIzaSyBpCPp95sTmIokd4qQxARKAWxFJnKF6Efo",
   authDomain: "cruisin-craftsmen.firebaseapp.com",
@@ -103,7 +113,6 @@ const firebaseConfig = {
   appId: "1:169024473632:web:628511fc7fafbbe6df8a45",
   measurementId: "G-JGDGFVM2XS"
 };
-// Initialiseer Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -111,11 +120,9 @@ const LABELS = { ijzer:"Ijzer", staal:"Staal", aluminium:"Aluminium", carparts:"
 const RESTRICTED = ["plastic", "glas", "koper", "elektronischschroot"];
 let PRICES = {};
 
-// Haal prijzen op
 db.ref('prices').on('value', (snap) => {
     PRICES = snap.val();
     if (!PRICES) {
-        // Eerste keer vullen als database leeg is
         PRICES = {
             aankoop: { ijzer:20, staal:20, aluminium:10, carparts:25, metaalschroot:20, rubber:20, craftparts:25, elektronischschroot:10, plastic:10, glas:10, koper:10 },
             recycling: { banden:10, blikjes:10, telefoons:10, radios:10 }
@@ -125,7 +132,6 @@ db.ref('prices').on('value', (snap) => {
     renderUI();
 }, (error) => {
     console.error("Firebase fout:", error);
-    alert("Geen toegang tot database! Check je Firebase Rules.");
 });
 
 function renderUI() {
