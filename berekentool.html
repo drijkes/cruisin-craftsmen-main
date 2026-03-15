@@ -178,6 +178,15 @@ document.addEventListener('change', (e) => {
 
 function toggleLogin(s) { document.getElementById('login-overlay').style.display = s ? 'flex' : 'none'; }
 
+// Enter-toets functionaliteit voor inloggen
+[document.getElementById('user-login'), document.getElementById('pass-login')].forEach(input => {
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            document.getElementById('btn-auth').click();
+        }
+    });
+});
+
 document.getElementById('btn-auth').onclick = () => {
     if (document.getElementById('user-login').value === "admin" && document.getElementById('pass-login').value === "sletco") {
         toggleLogin(false);
