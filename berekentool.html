@@ -19,11 +19,35 @@
     .grid { display: grid; grid-template-columns: 1.2fr 0.8fr 1fr; gap: 10px; align-items: center; }
     .head { font-size: .85rem; color: #A82B2D; font-weight: 800; text-transform: uppercase; padding-bottom: 5px; border-bottom: 1px solid #444; margin-bottom: 10px; }
     .price-label { font-size: 0.85rem; color: #bbb; display: block; }
+    
+    /* --- LICHTEFFECTEN OP INPUTS --- */
     input[type="number"] { 
-      background: #333; color: #FEFEF3; border: 1px solid #555; width: 100%; padding: .6rem; 
-      font-size: 1rem; border-radius: 6px; box-sizing: border-box; outline: none; -moz-appearance: textfield;
+      background: #333; color: #FEFEF3; border: 2px solid #555; width: 100%; padding: .6rem; 
+      font-size: 1rem; border-radius: 6px; box-sizing: border-box; outline: none;
+      transition: all 0.3s ease; /* Zorgt voor een vloeiende overgang */
     }
-    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    /* Oplichten wanneer het veld actief is */
+    input[type="number"]:not(:disabled) {
+      border-color: #A82B2D;
+      box-shadow: 0 0 8px rgba(168, 43, 45, 0.2);
+    }
+
+    /* Extra fel oplichten bij focus (als je erin typt) */
+    input[type="number"]:focus {
+      border-color: #ff3b3e;
+      box-shadow: 0 0 15px rgba(168, 43, 45, 0.5);
+      background: #444;
+    }
+
+    /* Grijs en gedoofd als het veld uitgeschakeld is */
+    input[type="number"]:disabled {
+      border-color: #444;
+      opacity: 0.3;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
     .sub-total-cell { text-align: right; font-weight: 700; color: #FEFEF3; font-size: 1.1rem; }
     button { cursor: pointer; border: none; border-radius: 8px; padding: .8rem 1.2rem; font-weight: 700; margin-top: 1rem; }
     .primary { background: #A82B2D; color: #FEFEF3; width: 100%; }
@@ -45,7 +69,9 @@
   <section class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
       <h2 style="margin:0;">Aankoop</h2>
-      <label style="font-size: 0.8rem; color:#bbb;"><input type="checkbox" id="approve-extra"> Manager Accoord</label>
+      <label style="font-size: 0.9rem; color:#A82B2D; font-weight:bold; cursor:pointer;">
+        <input type="checkbox" id="approve-extra"> ⚠️ MANAGER AKKOORD
+      </label>
     </div>
     <div class="grid" id="container-aankoop">Database laden...</div>
   </section>
@@ -57,7 +83,7 @@
 
   <section class="card">
     <div style="text-align:center;">
-        <div style="font-size: 0.9rem; color:#bbb; text-transform:uppercase; letter-spacing:1px;">Totaal Uitbetalen</div>
+        <div style="font-size: 0.9rem; color:#bbb; text-transform:uppercase;">Totaal Uitbetalen</div>
         <div id="disp-sum-total">€ 0</div>
         <div style="display:flex; gap:10px;">
           <button class="ghost" style="flex:1;" id="btn-copy-total">📋 Kopiëren</button>
@@ -66,12 +92,12 @@
     </div>
   </section>
 
-  <div style="text-align:center; margin-top: 3rem;">
+  <div style="text-align:center; margin-top: 2rem;">
     <button class="ghost" id="admin-status-btn" onclick="toggleLogin(true)" style="font-size:0.7rem; opacity:0.4;">🛠️ BEHEERDER LOGIN</button>
   </div>
 
   <section class="card" id="admin-panel" style="display:none; border: 2px solid #A82B2D;">
-    <h2>⚙️ Prijzen Aanpassen (Live)</h2>
+    <h2>⚙️ Prijzen Aanpassen</h2>
     <div id="price-edit-grid" class="grid" style="grid-template-columns: 1fr 1fr;"></div>
     <button class="primary" id="btn-save-prices">💾 Prijzen Opslaan</button>
     <button class="danger" onclick="firebase.auth().signOut()">🚪 Uitloggen</button>
@@ -87,6 +113,7 @@
 </div>
 
 <script>
+// --- GEGEVENS ---
 const EMAILJS_PUBLIC_KEY = "rOpe9bOgVCSBWRLXm"; 
 const EMAILJS_SERVICE_ID = "service_fgawe2t";       
 const EMAILJS_TEMPLATE_ID = "template_zlg3ne7"; 
@@ -112,6 +139,7 @@ const LABELS = { ijzer:"Ijzer", staal:"Staal", aluminium:"Aluminium", carparts:"
 const RESTRICTED = ["plastic", "glas", "koper", "elektronischschroot"];
 let PRICES = {};
 
+// AUTHENTICATIE
 auth.onAuthStateChanged(user => {
     if (user) {
         const safeEmail = user.email.replace(/\./g, ',');
@@ -122,7 +150,7 @@ auth.onAuthStateChanged(user => {
                 setupAdminGrid();
             } else {
                 document.getElementById('admin-panel').style.display = 'none';
-                document.getElementById('admin-status-btn').textContent = "⏳ TOEGANG AANGEVRAAGD";
+                document.getElementById('admin-status-btn').textContent = "⏳ TOEGANG AFGEWACHT";
             }
         });
     } else {
@@ -140,34 +168,34 @@ document.getElementById('btn-auth').onclick = () => {
                     emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
                         user_name: result.user.displayName,
                         user_email: result.user.email
-                    }).then(() => alert("Aanvraag verzonden!"), (err) => alert("Fout: " + JSON.stringify(err)));
+                    }).then(() => alert("Aanvraag verzonden!")).catch(err => alert("Fout: " + err.text));
                 }
             }
             toggleLogin(false);
         });
-    }).catch(err => alert("Fout: " + err.message));
+    });
 };
 
+// CALCULATOR LOGICA
 db.ref('prices').on('value', (snap) => {
-    PRICES = snap.val() || {
-        aankoop: { ijzer:20, staal:20, aluminium:10, carparts:25, metaalschroot:20, rubber:20, craftparts:25, elektronischschroot:10, plastic:10, glas:10, koper:10 },
-        recycling: { banden:10, blikjes:10, telefoons:10, radios:10 }
-    };
+    PRICES = snap.val() || { aankoop: { ijzer:20 }, recycling: { banden:10 } };
     renderUI();
 });
 
 function renderUI() {
     ['aankoop', 'recycling'].forEach(sec => {
         const cont = document.getElementById(`container-${sec}`);
+        if(!cont) return;
         let html = `<div class="head">Item</div><div class="head">Aantal</div><div class="head" style="text-align:right;">Totaal</div>`;
         for (let id in PRICES[sec]) {
-            html += `
-                <div><strong>${LABELS[id]}</strong><span class="price-label">€${PRICES[sec][id]}/st</span></div>
-                <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()" ${RESTRICTED.includes(id) && !document.getElementById('approve-extra').checked ? 'disabled' : ''}></div>
-                <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
+            const isDisabled = RESTRICTED.includes(id) && !document.getElementById('approve-extra').checked;
+            html += `<div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES[sec][id]}/st</span></div>
+                     <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()" ${isDisabled ? 'disabled' : ''}></div>
+                     <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
         }
         cont.innerHTML = html;
     });
+    updateSums();
 }
 
 function updateSums() {
@@ -176,8 +204,7 @@ function updateSums() {
         for (let id in PRICES[sec]) {
             const el = document.getElementById(id);
             if(el) {
-                const qty = parseInt(el.value) || 0;
-                const sub = qty * PRICES[sec][id];
+                const sub = (parseInt(el.value) || 0) * PRICES[sec][id];
                 document.getElementById(`sub-${id}`).textContent = "€ " + sub.toLocaleString('nl-NL');
                 grandTotal += sub;
             }
@@ -188,39 +215,29 @@ function updateSums() {
 
 function setupAdminGrid() {
     const g = document.getElementById('price-edit-grid');
-    if(!g) return;
     g.innerHTML = "";
     for (let sec in PRICES) {
         for (let id in PRICES[sec]) {
-            g.innerHTML += `<div style="padding:10px 0;">${LABELS[id]}</div><input type="number" class="adm-in" data-sec="${sec}" data-id="${id}" value="${PRICES[sec][id]}">`;
+            g.innerHTML += `<div style="padding:10px 0;">${LABELS[id] || id}</div><input type="number" class="adm-in" data-sec="${sec}" data-id="${id}" value="${PRICES[sec][id]}">`;
         }
     }
 }
 
 document.getElementById('btn-save-prices').onclick = () => {
-    document.querySelectorAll('.adm-in').forEach(i => {
-        PRICES[i.dataset.sec][i.dataset.id] = parseInt(i.value) || 0;
-    });
-    db.ref('prices').set(PRICES).then(() => alert("Prijzen opgeslagen!")).catch(() => alert("Geen rechten!"));
+    document.querySelectorAll('.adm-in').forEach(i => PRICES[i.dataset.sec][i.dataset.id] = parseInt(i.value) || 0);
+    db.ref('prices').set(PRICES).then(() => alert("Opgeslagen!"));
 };
 
 function toggleLogin(s) { document.getElementById('login-overlay').style.display = s ? 'flex' : 'none'; }
-
 document.getElementById('btn-copy-total').onclick = () => {
-    const val = document.getElementById('disp-sum-total').textContent.replace(/\D/g, '');
+    const val = document.getElementById('disp-sum-total').textContent.replace('€ ', '').replace('.', '');
     navigator.clipboard.writeText(val);
-    alert("Gekopieerd!");
+    alert("Bedrag gekopieerd!");
 };
 
 document.addEventListener('change', (e) => {
   if (e.target.id === 'approve-extra') {
-    RESTRICTED.forEach(id => {
-      const inp = document.getElementById(id);
-      if(inp) {
-        inp.disabled = !e.target.checked;
-        if(!e.target.checked) { inp.value = ""; updateSums(); }
-      }
-    });
+    renderUI(); // Herlaad UI om velden te activeren/deactiveren met nieuwe styles
   }
 });
 </script>
