@@ -163,7 +163,7 @@ document.getElementById('btn-auth').onclick = () => {
         const safeEmail = result.user.email.replace(/\./g, ',');
         db.ref('whitelist/' + safeEmail).once('value', snap => {
             if (!(snap.exists() && snap.val() === true)) {
-                if(confirm("Stuur een aanvraag naar Joran voor dit account?")) {
+                if(confirm("Stuur een aanvraag naar Drijkes voor dit account?")) {
                     emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { user_name: result.user.displayName, user_email: result.user.email });
                 }
             }
