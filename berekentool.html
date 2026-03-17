@@ -12,7 +12,9 @@
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; background: #1e1e1e; color: #FEFEF3; }
     header { text-align: center; padding: 2rem 1rem 1rem; }
-    .logo { max-width: 400px; margin-bottom: 1rem;}
+    .logo-link { display: inline-block; transition: opacity 0.2s; }
+    .logo-link:hover { opacity: 0.8; }
+    .logo { max-width: 400px; margin-bottom: 1rem; border: none; }
     .wrap { max-width: 960px; margin: 0 auto; padding: 1rem; }
     .card { background: #2a2a2a; border: 1px solid #444; border-radius: 12px; padding: 1rem; margin-top: 1rem; }
     .card.restricted-zone { border: 2px solid #A82B2D; }
@@ -25,13 +27,26 @@
     }
     input[type="number"]:disabled { opacity: 0.3; cursor: not-allowed; background: #222; }
     .sub-total-cell { text-align: right; font-weight: 700; color: #FEFEF3; font-size: 1.1rem; }
-    button { cursor: pointer; border: none; border-radius: 8px; padding: .8rem 1.2rem; font-weight: 700; margin-top: 1rem; }
-    .primary { background: #A82B2D; color: #FEFEF3; width: 100%; }
-    .ghost { background: #444; color: #FEFEF3; }
-    #disp-sum-total { font-size: 2.5rem; color: #A82B2D; font-weight: 900; margin: 0.5rem 0; text-align: center;}
     
-    /* Samenvatting styling */
-    .summary-list { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #555; font-size: 0.95rem; }
+    button, .btn-nav { 
+      cursor: pointer; border: none; border-radius: 8px; padding: .8rem 1.2rem; 
+      font-weight: 700; text-decoration: none; 
+      display: inline-block; text-align: center; box-sizing: border-box;
+      font-family: inherit; transition: 0.2s;
+    }
+    .primary { background: #A82B2D; color: #FEFEF3; width: 100%; margin-top: 10px; }
+    .ghost { background: #444; color: #FEFEF3; font-size: 0.9rem; margin-top: 10px; }
+    
+    .nav-footer { text-align: center; margin-top: 2rem; padding-bottom: 3rem; }
+    .secondary-nav { 
+        background: #333; color: #FEFEF3; font-size: 0.75rem; 
+        opacity: 0.6; padding: 0.6rem 1.5rem; display: inline-block;
+        margin: 5px auto; min-width: 150px; text-transform: uppercase;
+    }
+    .secondary-nav:hover { opacity: 1; background: #444; }
+    
+    #disp-sum-total { font-size: 2.5rem; color: #A82B2D; font-weight: 900; margin: 0.5rem 0; text-align: center;}
+    .summary-list { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #555; font-size: 0.95rem; text-align: left; }
     .summary-item { display: flex; justify-content: space-between; padding: 4px 0; color: #ddd; }
     .summary-item b { color: #FEFEF3; }
     
@@ -42,7 +57,9 @@
 <body>
 
 <header>
-  <img src="logo.png" alt="Cruisin Craftsmen" class="logo">
+  <a href="index.html" class="logo-link">
+    <img src="logo.png" alt="Cruisin Craftsmen" class="logo">
+  </a>
   <h1>Mechanic Berekentool</h1>
 </header>
 
@@ -69,22 +86,24 @@
 
   <section class="card">
     <div style="text-align:center;">
-        <div style="font-size: 0.9rem; color:#bbb; text-transform:uppercase; letter-spacing:1px;">Totaal uit te betalen</div>
+        <div style="font-size: 0.9rem; color:#bbb; text-transform:uppercase; letter-spacing:1px;">Totaal Uitbetalen</div>
         <div id="disp-sum-total">€ 0</div>
         
         <div id="summary-container" class="summary-list">
-          <div style="color:#666; font-style:italic;">Nog geen items ingevuld</div>
+          <div style="color:#666; font-style:italic; text-align:center;">Nog geen items ingevuld</div>
         </div>
 
-        <div style="display:flex; gap:10px; margin-top:1.5rem;">
-          <button class="ghost" style="flex:1;" id="btn-copy-total">📋 Alles Kopiëren</button>
-          <button class="ghost" style="flex:1;" onclick="location.reload()">🔄 Wissen</button>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:1.5rem;">
+          <button class="ghost" id="btn-copy-total">📋 Kopiëren</button>
+          <button class="ghost" onclick="location.reload()">🔄 Wissen</button>
         </div>
     </div>
   </section>
 
-  <div style="text-align:center; margin-top: 3rem;">
-    <button class="ghost" id="admin-status-btn" onclick="toggleLogin(true)" style="font-size:0.7rem; opacity:0.4;">🛠️ BEHEERDER LOGIN</button>
+  <div class="nav-footer">
+    <a href="index.html" class="btn-nav secondary-nav">🏠 Home</a>
+    <br>
+    <button class="btn-nav secondary-nav" id="admin-status-btn" onclick="toggleLogin(true)">🛠️ Beheerder Login</button>
   </div>
 </div>
 
@@ -118,10 +137,7 @@ let PRICES = {};
 
 db.ref('prices').on('value', (snap) => {
     const data = snap.val();
-    if(data) {
-        PRICES = data;
-        renderUI();
-    }
+    if(data) { PRICES = data; renderUI(); }
 });
 
 function renderUI() {
@@ -142,11 +158,13 @@ function renderUI() {
         else htmlAankoop += row;
     }
 
-    for (let id in PRICES.recycling) {
-        htmlRecycling += `
-            <div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES.recycling[id]}/st</span></div>
-            <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()"></div>
-            <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
+    if (PRICES.recycling) {
+        for (let id in PRICES.recycling) {
+            htmlRecycling += `
+                <div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES.recycling[id]}/st</span></div>
+                <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()"></div>
+                <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
+        }
     }
 
     contAankoop.innerHTML = htmlAankoop;
@@ -158,7 +176,7 @@ function renderUI() {
 function updateSums() {
     let grandTotal = 0;
     let summaryHtml = "";
-    let summaryText = "";
+    let summaryText = "CRUISIN CRAFTSMEN BEREKENING\n------------------\n";
     const isApproved = document.getElementById('master-approve').checked;
 
     for (let sec in PRICES) {
@@ -168,36 +186,26 @@ function updateSums() {
                 const qty = parseInt(el.value) || 0;
                 const isRestricted = RESTRICTED_IDS.includes(id);
                 
-                // Als item ingevuld is, toevoegen aan samenvatting (ook als manager nog niet akkoord is, voor overzicht)
-                if(qty > 0) {
+                // Logica: Alleen toevoegen aan overzicht als het item geldig is (niet restricted OF akkoord)
+                const isValid = !isRestricted || (isRestricted && isApproved);
+
+                if(qty > 0 && isValid) {
                   let subPrice = qty * PRICES[sec][id];
-                  let statusNote = (isRestricted && !isApproved) ? " <small>(Geen akkoord)</small>" : "";
-                  
                   summaryHtml += `<div class="summary-item"><span>${qty}x ${LABELS[id]}</span> <b>€ ${subPrice.toLocaleString('nl-NL')}</b></div>`;
                   summaryText += `${qty}x ${LABELS[id]}: € ${subPrice.toLocaleString('nl-NL')}\n`;
-                  
-                  // Alleen bij het echte totaal tellen indien toegestaan
-                  if (!(isRestricted && !isApproved)) {
-                    grandTotal += subPrice;
-                  }
+                  grandTotal += subPrice;
                 }
                 
-                // Update de sub-cellen in de grids
+                // De sub-totaal per regel laten we altijd de berekening zien (visuele feedback voor mechanic)
                 document.getElementById(`sub-${id}`).textContent = "€ " + (qty * PRICES[sec][id]).toLocaleString('nl-NL');
             }
         }
     }
     
     document.getElementById('disp-sum-total').textContent = "€ " + grandTotal.toLocaleString('nl-NL');
-    
     const summaryCont = document.getElementById('summary-container');
-    if(summaryHtml === "") {
-      summaryCont.innerHTML = `<div style="color:#666; font-style:italic;">Nog geen items ingevuld</div>`;
-    } else {
-      summaryCont.innerHTML = summaryHtml;
-    }
+    summaryCont.innerHTML = (summaryHtml === "") ? `<div style="color:#666; font-style:italic; text-align:center;">Nog geen items ingevuld</div>` : summaryHtml;
     
-    // Bewaar tekst voor kopieerfunctie
     window.lastSummaryText = summaryText + "------------------\nTOTAAL: € " + grandTotal.toLocaleString('nl-NL');
 }
 
@@ -207,7 +215,7 @@ function syncRestrictedInputs() {
         const inp = document.getElementById(id);
         if(inp) inp.disabled = !isApproved;
     });
-    updateSums();
+    updateSums(); // Ververs het overzicht direct bij het (de)selecteren
 }
 
 document.getElementById('master-approve').addEventListener('change', syncRestrictedInputs);
@@ -215,7 +223,7 @@ document.getElementById('master-approve').addEventListener('change', syncRestric
 document.getElementById('btn-copy-total').onclick = () => {
     if(!window.lastSummaryText) return;
     navigator.clipboard.writeText(window.lastSummaryText);
-    alert("Volledig overzicht gekopieerd naar klembord!");
+    alert("Overzicht gekopieerd!");
 };
 
 function toggleLogin(s) { document.getElementById('login-overlay').style.display = s ? 'flex' : 'none'; }
