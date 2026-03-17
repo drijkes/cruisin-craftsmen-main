@@ -8,74 +8,58 @@
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   
   <style>
-    body { font-family: system-ui, sans-serif; margin: 0; background: #121212; color: #FEFEF3; }
+    body { font-family: system-ui, sans-serif; margin: 0; background: #1e1e1e; color: #FEFEF3; }
     header { text-align: center; padding: 2rem 1rem 1rem; }
-    .logo { max-width: 350px; margin-bottom: 1rem;}
-    .wrap { max-width: 900px; margin: 0 auto; padding: 1rem; }
-    .card { background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; }
-    .grid { display: grid; grid-template-columns: 1.2fr 0.8fr 1fr; gap: 12px; align-items: center; }
-    .head { font-size: .8rem; color: #A82B2D; font-weight: 800; text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid #333; margin-bottom: 10px; }
-    .price-label { font-size: 0.8rem; color: #888; display: block; }
-    
-    /* --- WIT LICHTEFFECT OP INPUTS --- */
+    .logo { max-width: 400px; margin-bottom: 1rem;}
+    .wrap { max-width: 960px; margin: 0 auto; padding: 1rem; }
+    .card { background: #2a2a2a; border: 1px solid #444; border-radius: 12px; padding: 1rem; margin-top: 1rem; }
+    .card.restricted-zone { border: 2px solid #A82B2D; }
+    .grid { display: grid; grid-template-columns: 1.2fr 0.8fr 1fr; gap: 10px; align-items: center; }
+    .head { font-size: .85rem; color: #A82B2D; font-weight: 800; text-transform: uppercase; padding-bottom: 5px; border-bottom: 1px solid #444; margin-bottom: 10px; }
+    .price-label { font-size: 0.85rem; color: #bbb; display: block; }
     input[type="number"] { 
-      background: #252525; color: #FEFEF3; border: 2px solid #444; width: 100%; padding: .7rem; 
-      font-size: 1.1rem; border-radius: 8px; box-sizing: border-box; outline: none;
-      transition: all 0.25s ease-in-out;
+      background: #333; color: #FEFEF3; border: 1px solid #555; width: 100%; padding: .6rem; 
+      font-size: 1rem; border-radius: 6px; box-sizing: border-box; outline: none; -moz-appearance: textfield;
     }
-
-    /* Oplichten wanneer het veld actief is (Wit) */
-    input[type="number"]:not(:disabled) {
-      border-color: #ffffff;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
-    }
-
-    /* Extra fel wit bij typen */
-    input[type="number"]:focus {
-      border-color: #ffffff;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
-      background: #2a2a2a;
-    }
-
-    /* Gedoofd effect */
-    input[type="number"]:disabled {
-      border-color: #333;
-      opacity: 0.2;
-      cursor: not-allowed;
-    }
-
-    .sub-total-cell { text-align: right; font-weight: 800; color: #FEFEF3; font-size: 1.1rem; }
-    button { cursor: pointer; border: none; border-radius: 8px; padding: .8rem 1.2rem; font-weight: 700; margin-top: 1rem; transition: 0.2s; }
+    input[type="number"]:disabled { opacity: 0.3; cursor: not-allowed; background: #222; }
+    .sub-total-cell { text-align: right; font-weight: 700; color: #FEFEF3; font-size: 1.1rem; }
+    button { cursor: pointer; border: none; border-radius: 8px; padding: .8rem 1.2rem; font-weight: 700; margin-top: 1rem; }
     .primary { background: #A82B2D; color: #FEFEF3; width: 100%; }
-    .ghost { background: #333; color: #FEFEF3; }
-    .ghost:hover { background: #444; }
-    .danger { background: #222; color: #ff6b6b; border: 1px solid #ff6b6b; width: 100%; margin-top: 10px; }
-    #disp-sum-total { font-size: 3rem; color: #A82B2D; font-weight: 900; margin: 1rem 0; text-align: center;}
-    #login-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; align-items:center; justify-content:center; }
-    .login-card { background: #1e1e1e; padding: 2.5rem; border-radius: 16px; border: 1px solid #A82B2D; width: 340px; text-align: center; }
+    .ghost { background: #444; color: #FEFEF3; }
+    #disp-sum-total { font-size: 2.5rem; color: #A82B2D; font-weight: 900; margin: 0.5rem 0; text-align: center;}
     
-    .manager-divider { grid-column: 1 / span 3; padding: 15px 0 5px; color: #A82B2D; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px dashed #444; margin-bottom: 10px; }
+    /* Samenvatting styling */
+    .summary-list { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #555; font-size: 0.95rem; }
+    .summary-item { display: flex; justify-content: space-between; padding: 4px 0; color: #ddd; }
+    .summary-item b { color: #FEFEF3; }
+    
+    #login-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; }
+    .login-card { background: #2a2a2a; padding: 2rem; border-radius: 12px; border: 1px solid #A82B2D; width: 320px; text-align: center; }
   </style>
 </head>
 <body>
 
 <header>
   <img src="logo.png" alt="Cruisin Craftsmen" class="logo">
-  <h1 style="letter-spacing: -1px; font-weight: 900;">MECHANIC CALCULATOR</h1>
+  <h1>Mechanic Berekentool</h1>
 </header>
 
 <div class="wrap">
   <section class="card">
-    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 1.5rem;">
-      <h2 style="margin:0;">Aankoop Lijst</h2>
-      <label style="background: #252525; padding: 8px 12px; border-radius: 8px; border: 1px solid #A82B2D; color: #FEFEF3; font-size: 0.8rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-        <input type="checkbox" id="approve-extra" style="accent-color: #A82B2D; transform: scale(1.2);"> ⚠️ MANAGER AKKOORD
+    <h2 style="margin-bottom: 1rem;">Aankoop</h2>
+    <div class="grid" id="container-aankoop">Laden...</div>
+  </section>
+
+  <section class="card restricted-zone">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+      <h2 style="margin:0; color: #A82B2D;">Speciale Aankoop</h2>
+      <label style="background: #A82B2D; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem;">
+        <input type="checkbox" id="master-approve"> Manager Akkoord
       </label>
     </div>
-    <div class="grid" id="container-aankoop">Laden...</div>
+    <div class="grid" id="container-restricted">Laden...</div>
   </section>
 
   <section class="card">
@@ -85,40 +69,34 @@
 
   <section class="card">
     <div style="text-align:center;">
-        <div style="font-size: 0.8rem; color:#888; text-transform:uppercase; font-weight: bold;">Totaal uitbetalen aan klant</div>
+        <div style="font-size: 0.9rem; color:#bbb; text-transform:uppercase; letter-spacing:1px;">Totaal uit te betalen</div>
         <div id="disp-sum-total">€ 0</div>
-        <div style="display:flex; gap:10px;">
-          <button class="ghost" style="flex:1;" id="btn-copy-total">📋 Bedrag Kopiëren</button>
-          <button class="ghost" style="flex:1;" onclick="location.reload()">🔄 Alles Wissen</button>
+        
+        <div id="summary-container" class="summary-list">
+          <div style="color:#666; font-style:italic;">Nog geen items ingevuld</div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:1.5rem;">
+          <button class="ghost" style="flex:1;" id="btn-copy-total">📋 Alles Kopiëren</button>
+          <button class="ghost" style="flex:1;" onclick="location.reload()">🔄 Wissen</button>
         </div>
     </div>
   </section>
 
-  <div style="text-align:center; margin-top: 2.5rem;">
-    <button class="ghost" id="admin-status-btn" onclick="toggleLogin(true)" style="font-size:0.65rem; opacity:0.3; letter-spacing: 1px;">⚙️ ADMIN AUTHENTICATION</button>
+  <div style="text-align:center; margin-top: 3rem;">
+    <button class="ghost" id="admin-status-btn" onclick="toggleLogin(true)" style="font-size:0.7rem; opacity:0.4;">🛠️ BEHEERDER LOGIN</button>
   </div>
-
-  <section class="card" id="admin-panel" style="display:none; border: 2px solid #A82B2D;">
-    <h2 style="margin-top:0;">Beheerder Paneel</h2>
-    <div id="price-edit-grid" class="grid" style="grid-template-columns: 1fr 1fr;"></div>
-    <button class="primary" id="btn-save-prices">💾 Prijzen Publiceren</button>
-    <button class="danger" onclick="firebase.auth().signOut()">🚪 Uitloggen</button>
-  </section>
 </div>
 
 <div id="login-overlay">
   <div class="login-card">
-    <h3 style="margin-top:0;">Login Vereist</h3>
-    <button class="primary" id="btn-auth" style="background:#4285F4; margin-bottom: 10px;">Login met Google</button>
-    <button class="ghost" onclick="toggleLogin(false)" style="width:100%;">Terug</button>
+    <h3>Beheer</h3>
+    <button class="primary" id="btn-auth" style="background:#4285F4;">🔵 Login met Google</button>
+    <button class="ghost" onclick="toggleLogin(false)" style="width:100%; margin-top:10px;">Sluiten</button>
   </div>
 </div>
 
 <script>
-const EMAILJS_PUBLIC_KEY = "rOpe9bOgVCSBWRLXm"; 
-const EMAILJS_SERVICE_ID = "service_fgawe2t";       
-const EMAILJS_TEMPLATE_ID = "template_zlg3ne7"; 
-
 const firebaseConfig = {
   apiKey: "AIzaSyBpCPp95sTmIokd4qQxARKAWxFJnKF6Efo",
   authDomain: "cruisin-craftsmen.firebaseapp.com",
@@ -130,123 +108,118 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-emailjs.init(EMAILJS_PUBLIC_KEY);
-
 const db = firebase.database();
 const auth = firebase.auth();
 const provider = new firebase.auth.GoogleAuthProvider();
 
 const LABELS = { ijzer:"Ijzer", staal:"Staal", aluminium:"Aluminium", carparts:"Car parts", craftparts:"Craft parts", elektronischschroot:"Elek. Schroot", metaalschroot:"Metaalschroot", rubber:"Rubber", plastic:"Plastic", glas:"Glas", koper:"Koper", banden:"Banden", blikjes:"Blikjes", telefoons:"Telefoons", radios:"Radio's" };
-const RESTRICTED = ["plastic", "glas", "koper", "elektronischschroot"];
+const RESTRICTED_IDS = ["plastic", "glas", "koper", "elektronischschroot"];
 let PRICES = {};
 
-auth.onAuthStateChanged(user => {
-    if (user) {
-        const safeEmail = user.email.replace(/\./g, ',');
-        db.ref('whitelist/' + safeEmail).on('value', snap => {
-            if (snap.exists() && snap.val() === true) {
-                document.getElementById('admin-panel').style.display = 'block';
-                document.getElementById('admin-status-btn').textContent = "✅ ADMIN: " + user.displayName.toUpperCase();
-                setupAdminGrid();
-            } else {
-                document.getElementById('admin-status-btn').textContent = "⏳ WACHT OP AUTORISATIE";
-            }
-        });
-    } else {
-        document.getElementById('admin-panel').style.display = 'none';
-        document.getElementById('admin-status-btn').textContent = "⚙️ ADMIN AUTHENTICATION";
+db.ref('prices').on('value', (snap) => {
+    const data = snap.val();
+    if(data) {
+        PRICES = data;
+        renderUI();
     }
 });
 
-document.getElementById('btn-auth').onclick = () => {
-    auth.signInWithPopup(provider).then(result => {
-        const safeEmail = result.user.email.replace(/\./g, ',');
-        db.ref('whitelist/' + safeEmail).once('value', snap => {
-            if (!(snap.exists() && snap.val() === true)) {
-                if(confirm("Stuur een aanvraag naar Drijkes voor dit account?")) {
-                    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { user_name: result.user.displayName, user_email: result.user.email });
-                }
-            }
-            toggleLogin(false);
-        });
-    });
-};
-
-db.ref('prices').on('value', snap => {
-    PRICES = snap.val() || { aankoop: { ijzer:20 }, recycling: { banden:10 } };
-    renderUI();
-});
-
 function renderUI() {
-    ['aankoop', 'recycling'].forEach(sec => {
-        const cont = document.getElementById(`container-${sec}`);
-        if(!cont) return;
-        let html = `<div class="head">Item</div><div class="head">Aantal</div><div class="head" style="text-align:right;">Totaal</div>`;
-        
-        // Sorteer: eerst de gewone, dan de restricted
-        const keys = Object.keys(PRICES[sec]).sort((a, b) => {
-            const aRes = RESTRICTED.includes(a);
-            const bRes = RESTRICTED.includes(b);
-            return aRes - bRes;
-        });
+    const contAankoop = document.getElementById('container-aankoop');
+    const contRestricted = document.getElementById('container-restricted');
+    const contRecycling = document.getElementById('container-recycling');
+    
+    let htmlAankoop = `<div class="head">Item</div><div class="head">Aantal</div><div class="head" style="text-align:right;">Totaal</div>`;
+    let htmlRestricted = `<div class="head">Item</div><div class="head">Aantal</div><div class="head" style="text-align:right;">Totaal</div>`;
+    let htmlRecycling = `<div class="head">Item</div><div class="head">Aantal</div><div class="head" style="text-align:right;">Totaal</div>`;
 
-        let hasShownDivider = false;
+    for (let id in PRICES.aankoop) {
+        let row = `
+            <div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES.aankoop[id]}/st</span></div>
+            <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()"></div>
+            <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
+        if (RESTRICTED_IDS.includes(id)) htmlRestricted += row;
+        else htmlAankoop += row;
+    }
 
-        keys.forEach(id => {
-            if (RESTRICTED.includes(id) && !hasShownDivider && sec === 'aankoop') {
-                html += `<div class="manager-divider">Mits goedkeuring Manager</div>`;
-                hasShownDivider = true;
-            }
-            const isDisabled = RESTRICTED.includes(id) && !document.getElementById('approve-extra').checked;
-            html += `<div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES[sec][id]}/st</span></div>
-                     <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()" ${isDisabled ? 'disabled' : ''}></div>
-                     <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
-        });
-        cont.innerHTML = html;
-    });
-    updateSums();
+    for (let id in PRICES.recycling) {
+        htmlRecycling += `
+            <div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES.recycling[id]}/st</span></div>
+            <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()"></div>
+            <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
+    }
+
+    contAankoop.innerHTML = htmlAankoop;
+    contRestricted.innerHTML = htmlRestricted;
+    contRecycling.innerHTML = htmlRecycling;
+    syncRestrictedInputs();
 }
 
 function updateSums() {
     let grandTotal = 0;
+    let summaryHtml = "";
+    let summaryText = "";
+    const isApproved = document.getElementById('master-approve').checked;
+
     for (let sec in PRICES) {
         for (let id in PRICES[sec]) {
             const el = document.getElementById(id);
             if(el) {
-                const sub = (parseInt(el.value) || 0) * PRICES[sec][id];
-                document.getElementById(`sub-${id}`).textContent = "€ " + sub.toLocaleString('nl-NL');
-                grandTotal += sub;
+                const qty = parseInt(el.value) || 0;
+                const isRestricted = RESTRICTED_IDS.includes(id);
+                
+                // Als item ingevuld is, toevoegen aan samenvatting (ook als manager nog niet akkoord is, voor overzicht)
+                if(qty > 0) {
+                  let subPrice = qty * PRICES[sec][id];
+                  let statusNote = (isRestricted && !isApproved) ? " <small>(Geen akkoord)</small>" : "";
+                  
+                  summaryHtml += `<div class="summary-item"><span>${qty}x ${LABELS[id]}</span> <b>€ ${subPrice.toLocaleString('nl-NL')}</b></div>`;
+                  summaryText += `${qty}x ${LABELS[id]}: € ${subPrice.toLocaleString('nl-NL')}\n`;
+                  
+                  // Alleen bij het echte totaal tellen indien toegestaan
+                  if (!(isRestricted && !isApproved)) {
+                    grandTotal += subPrice;
+                  }
+                }
+                
+                // Update de sub-cellen in de grids
+                document.getElementById(`sub-${id}`).textContent = "€ " + (qty * PRICES[sec][id]).toLocaleString('nl-NL');
             }
         }
     }
+    
     document.getElementById('disp-sum-total').textContent = "€ " + grandTotal.toLocaleString('nl-NL');
-}
-
-function setupAdminGrid() {
-    const g = document.getElementById('price-edit-grid');
-    g.innerHTML = "";
-    for (let sec in PRICES) {
-        for (let id in PRICES[sec]) {
-            g.innerHTML += `<div style="padding:10px 0;">${LABELS[id] || id}</div><input type="number" class="adm-in" style="border-color:#444;" data-sec="${sec}" data-id="${id}" value="${PRICES[sec][id]}">`;
-        }
+    
+    const summaryCont = document.getElementById('summary-container');
+    if(summaryHtml === "") {
+      summaryCont.innerHTML = `<div style="color:#666; font-style:italic;">Nog geen items ingevuld</div>`;
+    } else {
+      summaryCont.innerHTML = summaryHtml;
     }
+    
+    // Bewaar tekst voor kopieerfunctie
+    window.lastSummaryText = summaryText + "------------------\nTOTAAL: € " + grandTotal.toLocaleString('nl-NL');
 }
 
-document.getElementById('btn-save-prices').onclick = () => {
-    document.querySelectorAll('.adm-in').forEach(i => PRICES[i.dataset.sec][i.dataset.id] = parseInt(i.value) || 0);
-    db.ref('prices').set(PRICES).then(() => alert("Prijzen succesvol gepubliceerd naar alle mechanics."));
+function syncRestrictedInputs() {
+    const isApproved = document.getElementById('master-approve').checked;
+    RESTRICTED_IDS.forEach(id => {
+        const inp = document.getElementById(id);
+        if(inp) inp.disabled = !isApproved;
+    });
+    updateSums();
+}
+
+document.getElementById('master-approve').addEventListener('change', syncRestrictedInputs);
+
+document.getElementById('btn-copy-total').onclick = () => {
+    if(!window.lastSummaryText) return;
+    navigator.clipboard.writeText(window.lastSummaryText);
+    alert("Volledig overzicht gekopieerd naar klembord!");
 };
 
 function toggleLogin(s) { document.getElementById('login-overlay').style.display = s ? 'flex' : 'none'; }
-document.getElementById('btn-copy-total').onclick = () => {
-    const val = document.getElementById('disp-sum-total').textContent.replace('€ ', '').replace('.', '');
-    navigator.clipboard.writeText(val);
-    alert("Klaar om te plakken!");
-};
-
-document.addEventListener('change', (e) => {
-  if (e.target.id === 'approve-extra') renderUI();
-});
+document.getElementById('btn-auth').onclick = () => auth.signInWithPopup(provider).then(() => toggleLogin(false));
 </script>
 </body>
 </html>
