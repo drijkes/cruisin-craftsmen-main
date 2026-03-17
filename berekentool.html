@@ -64,40 +64,48 @@
 </header>
 
 <div class="wrap">
-  <section class="card">
-    <h2 style="margin-bottom: 1rem;">Aankoop</h2>
-    <div class="grid" id="container-aankoop">Laden...</div>
-  </section>
+  <div id="mechanic-view">
+    <section class="card">
+      <h2 style="margin-bottom: 1rem;">Aankoop</h2>
+      <div class="grid" id="container-aankoop">Laden...</div>
+    </section>
 
-  <section class="card restricted-zone">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
-      <h2 style="margin:0; color: #A82B2D;">Speciale Aankoop</h2>
-      <label style="background: #A82B2D; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem;">
-        <input type="checkbox" id="master-approve"> Manager Akkoord
-      </label>
-    </div>
-    <div class="grid" id="container-restricted">Laden...</div>
-  </section>
+    <section class="card restricted-zone">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+        <h2 style="margin:0; color: #A82B2D;">Speciale Aankoop</h2>
+        <label style="background: #A82B2D; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem;">
+          <input type="checkbox" id="master-approve"> Manager Akkoord
+        </label>
+      </div>
+      <div class="grid" id="container-restricted">Laden...</div>
+    </section>
 
-  <section class="card">
-    <h2 style="margin-bottom: 1rem;">Recycling</h2>
-    <div class="grid" id="container-recycling">Laden...</div>
-  </section>
+    <section class="card">
+      <h2 style="margin-bottom: 1rem;">Recycling</h2>
+      <div class="grid" id="container-recycling">Laden...</div>
+    </section>
 
-  <section class="card">
-    <div style="text-align:center;">
-        <div style="font-size: 0.9rem; color:#bbb; text-transform:uppercase; letter-spacing:1px;">Totaal Uitbetalen</div>
-        <div id="disp-sum-total">€ 0</div>
-        
-        <div id="summary-container" class="summary-list">
-          <div style="color:#666; font-style:italic; text-align:center;">Nog geen items ingevuld</div>
-        </div>
+    <section class="card">
+      <div style="text-align:center;">
+          <div style="font-size: 0.9rem; color:#bbb; text-transform:uppercase; letter-spacing:1px;">Totaal Uitbetalen</div>
+          <div id="disp-sum-total">€ 0</div>
+          <div id="summary-container" class="summary-list">
+            <div style="color:#666; font-style:italic; text-align:center;">Nog geen items ingevuld</div>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:1.5rem;">
+            <button class="ghost" id="btn-copy-total">📋 Kopiëren</button>
+            <button class="ghost" onclick="location.reload()">🔄 Wissen</button>
+          </div>
+      </div>
+    </section>
+  </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:1.5rem;">
-          <button class="ghost" id="btn-copy-total">📋 Kopiëren</button>
-          <button class="ghost" onclick="location.reload()">🔄 Wissen</button>
-        </div>
-    </div>
+  <section class="card" id="admin-panel" style="display:none; border: 2px solid #A82B2D;">
+    <h2 style="color: #A82B2D;">⚙️ Prijzen Aanpassen</h2>
+    <p style="font-size: 0.8rem; opacity: 0.7;">Pas hier de prijzen aan. Deze worden direct bijgewerkt voor het hele team.</p>
+    <div id="price-edit-grid" class="grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;"></div>
+    <button class="primary" id="btn-save-prices">💾 Prijzen Opslaan</button>
+    <button class="ghost" style="width:100%; margin-top: 10px;" onclick="firebase.auth().signOut()">🚪 Uitloggen</button>
   </section>
 
   <div class="nav-footer">
@@ -109,7 +117,7 @@
 
 <div id="login-overlay">
   <div class="login-card">
-    <h3>Beheer</h3>
+    <h3>Beheer Toegang</h3>
     <button class="primary" id="btn-auth" style="background:#4285F4;">🔵 Login met Google</button>
     <button class="ghost" onclick="toggleLogin(false)" style="width:100%; margin-top:10px;">Sluiten</button>
   </div>
@@ -135,9 +143,14 @@ const LABELS = { ijzer:"Ijzer", staal:"Staal", aluminium:"Aluminium", carparts:"
 const RESTRICTED_IDS = ["plastic", "glas", "koper", "elektronischschroot"];
 let PRICES = {};
 
+// DATA SYNC
 db.ref('prices').on('value', (snap) => {
     const data = snap.val();
-    if(data) { PRICES = data; renderUI(); }
+    if(data) { 
+        PRICES = data; 
+        renderUI();
+        if(document.getElementById('admin-panel').style.display === 'block') setupAdminGrid();
+    }
 });
 
 function renderUI() {
@@ -145,38 +158,27 @@ function renderUI() {
     const contRestricted = document.getElementById('container-restricted');
     const contRecycling = document.getElementById('container-recycling');
     
-    let htmlAankoop = `<div class="head">Item</div><div class="head">Aantal</div><div class="head" style="text-align:right;">Totaal</div>`;
-    let htmlRestricted = `<div class="head">Item</div><div class="head">Aantal</div><div class="head" style="text-align:right;">Totaal</div>`;
-    let htmlRecycling = `<div class="head">Item</div><div class="head">Aantal</div><div class="head" style="text-align:right;">Totaal</div>`;
+    let htmlA = headerRow(); let htmlRest = headerRow(); let htmlRec = headerRow();
 
     for (let id in PRICES.aankoop) {
-        let row = `
-            <div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES.aankoop[id]}/st</span></div>
-            <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()"></div>
-            <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
-        if (RESTRICTED_IDS.includes(id)) htmlRestricted += row;
-        else htmlAankoop += row;
+        let row = `<div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES.aankoop[id]}/st</span></div>
+                   <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()"></div>
+                   <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
+        if (RESTRICTED_IDS.includes(id)) htmlRest += row; else htmlA += row;
     }
-
-    if (PRICES.recycling) {
-        for (let id in PRICES.recycling) {
-            htmlRecycling += `
-                <div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES.recycling[id]}/st</span></div>
-                <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()"></div>
-                <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
-        }
+    for (let id in PRICES.recycling) {
+        htmlRec += `<div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES.recycling[id]}/st</span></div>
+                    <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()"></div>
+                    <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
     }
-
-    contAankoop.innerHTML = htmlAankoop;
-    contRestricted.innerHTML = htmlRestricted;
-    contRecycling.innerHTML = htmlRecycling;
+    contAankoop.innerHTML = htmlA; contRestricted.innerHTML = htmlRest; contRecycling.innerHTML = htmlRec;
     syncRestrictedInputs();
 }
 
+function headerRow() { return `<div class="head">Item</div><div class="head">Aantal</div><div class="head" style="text-align:right;">Totaal</div>`; }
+
 function updateSums() {
-    let grandTotal = 0;
-    let summaryHtml = "";
-    let summaryText = "CRUISIN CRAFTSMEN BEREKENING\n------------------\n";
+    let grandTotal = 0; let summaryHtml = ""; let summaryText = "CRUISIN CRAFTSMEN\n------------------\n";
     const isApproved = document.getElementById('master-approve').checked;
 
     for (let sec in PRICES) {
@@ -185,49 +187,73 @@ function updateSums() {
             if(el) {
                 const qty = parseInt(el.value) || 0;
                 const isRestricted = RESTRICTED_IDS.includes(id);
-                
-                // Logica: Alleen toevoegen aan overzicht als het item geldig is (niet restricted OF akkoord)
                 const isValid = !isRestricted || (isRestricted && isApproved);
-
                 if(qty > 0 && isValid) {
-                  let subPrice = qty * PRICES[sec][id];
-                  summaryHtml += `<div class="summary-item"><span>${qty}x ${LABELS[id]}</span> <b>€ ${subPrice.toLocaleString('nl-NL')}</b></div>`;
-                  summaryText += `${qty}x ${LABELS[id]}: € ${subPrice.toLocaleString('nl-NL')}\n`;
-                  grandTotal += subPrice;
+                    let sub = qty * PRICES[sec][id];
+                    summaryHtml += `<div class="summary-item"><span>${qty}x ${LABELS[id]}</span> <b>€ ${sub.toLocaleString('nl-NL')}</b></div>`;
+                    summaryText += `${qty}x ${LABELS[id]}: € ${sub.toLocaleString('nl-NL')}\n`;
+                    grandTotal += sub;
                 }
-                
-                // De sub-totaal per regel laten we altijd de berekening zien (visuele feedback voor mechanic)
                 document.getElementById(`sub-${id}`).textContent = "€ " + (qty * PRICES[sec][id]).toLocaleString('nl-NL');
             }
         }
     }
-    
     document.getElementById('disp-sum-total').textContent = "€ " + grandTotal.toLocaleString('nl-NL');
-    const summaryCont = document.getElementById('summary-container');
-    summaryCont.innerHTML = (summaryHtml === "") ? `<div style="color:#666; font-style:italic; text-align:center;">Nog geen items ingevuld</div>` : summaryHtml;
-    
+    document.getElementById('summary-container').innerHTML = summaryHtml || `<div style="color:#666; font-style:italic; text-align:center;">Nog geen items ingevuld</div>`;
     window.lastSummaryText = summaryText + "------------------\nTOTAAL: € " + grandTotal.toLocaleString('nl-NL');
 }
 
 function syncRestrictedInputs() {
     const isApproved = document.getElementById('master-approve').checked;
-    RESTRICTED_IDS.forEach(id => {
-        const inp = document.getElementById(id);
-        if(inp) inp.disabled = !isApproved;
-    });
-    updateSums(); // Ververs het overzicht direct bij het (de)selecteren
+    RESTRICTED_IDS.forEach(id => { if(document.getElementById(id)) document.getElementById(id).disabled = !isApproved; });
+    updateSums();
 }
 
 document.getElementById('master-approve').addEventListener('change', syncRestrictedInputs);
 
-document.getElementById('btn-copy-total').onclick = () => {
-    if(!window.lastSummaryText) return;
-    navigator.clipboard.writeText(window.lastSummaryText);
-    alert("Overzicht gekopieerd!");
+// AUTH & ADMIN LOGIC
+auth.onAuthStateChanged(user => {
+    if (user) {
+        const safeEmail = user.email.replace(/\./g, ',');
+        db.ref('whitelist/' + safeEmail).on('value', snap => {
+            if (snap.val() === true) {
+                document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('mechanic-view').style.display = 'none';
+                setupAdminGrid();
+            } else {
+                alert("Geen beheerderstoegang voor dit account.");
+                auth.signOut();
+            }
+        });
+    } else {
+        document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('mechanic-view').style.display = 'block';
+    }
+});
+
+function setupAdminGrid() {
+    const g = document.getElementById('price-edit-grid');
+    g.innerHTML = `<div class="head">Item</div><div class="head">Prijs (€)</div>`;
+    for (let sec in PRICES) {
+        for (let id in PRICES[sec]) {
+            g.innerHTML += `<div>${LABELS[id] || id}</div>
+                            <input type="number" class="adm-in" data-sec="${sec}" data-id="${id}" value="${PRICES[sec][id]}">`;
+        }
+    }
+}
+
+document.getElementById('btn-save-prices').onclick = () => {
+    document.querySelectorAll('.adm-in').forEach(i => {
+        PRICES[i.dataset.sec][i.dataset.id] = parseInt(i.value) || 0;
+    });
+    db.ref('prices').set(PRICES).then(() => alert("Prijzen succesvol bijgewerkt!"));
 };
 
 function toggleLogin(s) { document.getElementById('login-overlay').style.display = s ? 'flex' : 'none'; }
 document.getElementById('btn-auth').onclick = () => auth.signInWithPopup(provider).then(() => toggleLogin(false));
+document.getElementById('btn-copy-total').onclick = () => {
+    if(window.lastSummaryText) { navigator.clipboard.writeText(window.lastSummaryText); alert("Gekopieerd!"); }
+};
 </script>
 </body>
 </html>
