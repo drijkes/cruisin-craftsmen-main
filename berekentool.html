@@ -8,6 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; background: #1e1e1e; color: #FEFEF3; }
@@ -25,7 +26,7 @@
       background: #333; color: #FEFEF3; border: 1px solid #555; width: 100%; padding: .6rem; 
       font-size: 1rem; border-radius: 6px; box-sizing: border-box; outline: none; -moz-appearance: textfield;
     }
-    input[type="number"]:disabled { opacity: 0.3; cursor: not-allowed; background: #222; }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .sub-total-cell { text-align: right; font-weight: 700; color: #FEFEF3; font-size: 1.1rem; }
     
     button, .btn-nav { 
@@ -37,6 +38,12 @@
     .primary { background: #A82B2D; color: #FEFEF3; width: 100%; margin-top: 10px; }
     .ghost { background: #444; color: #FEFEF3; font-size: 0.9rem; margin-top: 10px; }
     
+    #disp-sum-total { font-size: 2.5rem; color: #A82B2D; font-weight: 900; margin: 0.5rem 0; text-align: center;}
+    .summary-list { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #555; font-size: 0.95rem; text-align: left; }
+    .summary-item { display: flex; justify-content: space-between; padding: 4px 0; color: #ddd; }
+    .summary-item b { color: #FEFEF3; }
+
+    /* Nav onderaan */
     .nav-footer { text-align: center; margin-top: 2rem; padding-bottom: 3rem; }
     .secondary-nav { 
         background: #333; color: #FEFEF3; font-size: 0.75rem; 
@@ -44,12 +51,7 @@
         margin: 5px auto; min-width: 150px; text-transform: uppercase;
     }
     .secondary-nav:hover { opacity: 1; background: #444; }
-    
-    #disp-sum-total { font-size: 2.5rem; color: #A82B2D; font-weight: 900; margin: 0.5rem 0; text-align: center;}
-    .summary-list { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #555; font-size: 0.95rem; text-align: left; }
-    .summary-item { display: flex; justify-content: space-between; padding: 4px 0; color: #ddd; }
-    .summary-item b { color: #FEFEF3; }
-    
+
     #login-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; }
     .login-card { background: #2a2a2a; padding: 2rem; border-radius: 12px; border: 1px solid #A82B2D; width: 320px; text-align: center; }
   </style>
@@ -73,8 +75,8 @@
     <section class="card restricted-zone">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
         <h2 style="margin:0; color: #A82B2D;">Speciale Aankoop</h2>
-        <label style="background: #A82B2D; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem;">
-          <input type="checkbox" id="master-approve"> Manager Akkoord
+        <label style="background: #A82B2D; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">
+          <input type="checkbox" id="approve-extra"> Manager Akkoord
         </label>
       </div>
       <div class="grid" id="container-restricted">Laden...</div>
@@ -89,9 +91,11 @@
       <div style="text-align:center;">
           <div style="font-size: 0.9rem; color:#bbb; text-transform:uppercase; letter-spacing:1px;">Totaal Uitbetalen</div>
           <div id="disp-sum-total">€ 0</div>
+          
           <div id="summary-container" class="summary-list">
             <div style="color:#666; font-style:italic; text-align:center;">Nog geen items ingevuld</div>
           </div>
+
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:1.5rem;">
             <button class="ghost" id="btn-copy-total">📋 Kopiëren</button>
             <button class="ghost" onclick="location.reload()">🔄 Wissen</button>
@@ -101,10 +105,9 @@
   </div>
 
   <section class="card" id="admin-panel" style="display:none; border: 2px solid #A82B2D;">
-    <h2 style="color: #A82B2D;">⚙️ Prijzen Aanpassen</h2>
-    <p style="font-size: 0.8rem; opacity: 0.7;">Pas hier de prijzen aan. Deze worden direct bijgewerkt voor het hele team.</p>
+    <h2>⚙️ Prijzen Aanpassen (Live)</h2>
     <div id="price-edit-grid" class="grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;"></div>
-    <button class="primary" id="btn-save-prices">💾 Prijzen Opslaan</button>
+    <button class="primary" id="btn-save-prices">💾 Prijzen Opslaan voor Team</button>
     <button class="ghost" style="width:100%; margin-top: 10px;" onclick="firebase.auth().signOut()">🚪 Uitloggen</button>
   </section>
 
@@ -117,13 +120,18 @@
 
 <div id="login-overlay">
   <div class="login-card">
-    <h3>Beheer Toegang</h3>
+    <h3>Beheer</h3>
     <button class="primary" id="btn-auth" style="background:#4285F4;">🔵 Login met Google</button>
     <button class="ghost" onclick="toggleLogin(false)" style="width:100%; margin-top:10px;">Sluiten</button>
   </div>
 </div>
 
 <script>
+// --- CONFIGURATIE ---
+const EMAILJS_PUBLIC_KEY = "rOpe9bOgVCSBWRLXm"; 
+const EMAILJS_SERVICE_ID = "service_fgawe2t";       
+const EMAILJS_TEMPLATE_ID = "template_zlg3ne7"; 
+
 const firebaseConfig = {
   apiKey: "AIzaSyBpCPp95sTmIokd4qQxARKAWxFJnKF6Efo",
   authDomain: "cruisin-craftsmen.firebaseapp.com",
@@ -135,66 +143,69 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+emailjs.init(EMAILJS_PUBLIC_KEY);
 const db = firebase.database();
 const auth = firebase.auth();
 const provider = new firebase.auth.GoogleAuthProvider();
 
 const LABELS = { ijzer:"Ijzer", staal:"Staal", aluminium:"Aluminium", carparts:"Car parts", craftparts:"Craft parts", elektronischschroot:"Elek. Schroot", metaalschroot:"Metaalschroot", rubber:"Rubber", plastic:"Plastic", glas:"Glas", koper:"Koper", banden:"Banden", blikjes:"Blikjes", telefoons:"Telefoons", radios:"Radio's" };
-const RESTRICTED_IDS = ["plastic", "glas", "koper", "elektronischschroot"];
+const RESTRICTED = ["plastic", "glas", "koper", "elektronischschroot"];
 let PRICES = {};
 
 // DATA SYNC
 db.ref('prices').on('value', (snap) => {
-    const data = snap.val();
-    if(data) { 
-        PRICES = data; 
+    PRICES = snap.val();
+    if(PRICES) {
         renderUI();
         if(document.getElementById('admin-panel').style.display === 'block') setupAdminGrid();
     }
 });
 
 function renderUI() {
-    const contAankoop = document.getElementById('container-aankoop');
-    const contRestricted = document.getElementById('container-restricted');
-    const contRecycling = document.getElementById('container-recycling');
+    const contA = document.getElementById('container-aankoop');
+    const contRest = document.getElementById('container-restricted');
+    const contRec = document.getElementById('container-recycling');
     
     let htmlA = headerRow(); let htmlRest = headerRow(); let htmlRec = headerRow();
 
     for (let id in PRICES.aankoop) {
         let row = `<div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES.aankoop[id]}/st</span></div>
-                   <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()"></div>
+                   <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()" ${RESTRICTED.includes(id) && !document.getElementById('approve-extra').checked ? 'disabled' : ''}></div>
                    <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
-        if (RESTRICTED_IDS.includes(id)) htmlRest += row; else htmlA += row;
+        if (RESTRICTED.includes(id)) htmlRest += row; else htmlA += row;
     }
     for (let id in PRICES.recycling) {
         htmlRec += `<div><strong>${LABELS[id] || id}</strong><span class="price-label">€${PRICES.recycling[id]}/st</span></div>
                     <div><input id="${id}" type="number" placeholder="0" oninput="updateSums()"></div>
                     <div class="sub-total-cell" id="sub-${id}">€ 0</div>`;
     }
-    contAankoop.innerHTML = htmlA; contRestricted.innerHTML = htmlRest; contRecycling.innerHTML = htmlRec;
-    syncRestrictedInputs();
+    contA.innerHTML = htmlA; contRest.innerHTML = htmlRest; contRec.innerHTML = htmlRec;
+    updateSums();
 }
 
 function headerRow() { return `<div class="head">Item</div><div class="head">Aantal</div><div class="head" style="text-align:right;">Totaal</div>`; }
 
 function updateSums() {
     let grandTotal = 0; let summaryHtml = ""; let summaryText = "CRUISIN CRAFTSMEN\n------------------\n";
-    const isApproved = document.getElementById('master-approve').checked;
+    const isApproved = document.getElementById('approve-extra').checked;
 
     for (let sec in PRICES) {
         for (let id in PRICES[sec]) {
             const el = document.getElementById(id);
             if(el) {
                 const qty = parseInt(el.value) || 0;
-                const isRestricted = RESTRICTED_IDS.includes(id);
+                const isRestricted = RESTRICTED.includes(id);
                 const isValid = !isRestricted || (isRestricted && isApproved);
+
                 if(qty > 0 && isValid) {
                     let sub = qty * PRICES[sec][id];
                     summaryHtml += `<div class="summary-item"><span>${qty}x ${LABELS[id]}</span> <b>€ ${sub.toLocaleString('nl-NL')}</b></div>`;
                     summaryText += `${qty}x ${LABELS[id]}: € ${sub.toLocaleString('nl-NL')}\n`;
                     grandTotal += sub;
                 }
-                document.getElementById(`sub-${id}`).textContent = "€ " + (qty * PRICES[sec][id]).toLocaleString('nl-NL');
+                if(document.getElementById(`sub-${id}`)) {
+                    document.getElementById(`sub-${id}`).textContent = "€ " + (qty * PRICES[sec][id]).toLocaleString('nl-NL');
+                }
             }
         }
     }
@@ -203,57 +214,75 @@ function updateSums() {
     window.lastSummaryText = summaryText + "------------------\nTOTAAL: € " + grandTotal.toLocaleString('nl-NL');
 }
 
-function syncRestrictedInputs() {
-    const isApproved = document.getElementById('master-approve').checked;
-    RESTRICTED_IDS.forEach(id => { if(document.getElementById(id)) document.getElementById(id).disabled = !isApproved; });
+// MANAGER AKKOORD CLICK
+document.getElementById('approve-extra').onchange = (e) => {
+    RESTRICTED.forEach(id => {
+        const inp = document.getElementById(id);
+        if(inp) {
+            inp.disabled = !e.target.checked;
+            if(!e.target.checked) inp.value = "";
+        }
+    });
     updateSums();
-}
+};
 
-document.getElementById('master-approve').addEventListener('change', syncRestrictedInputs);
-
-// AUTH & ADMIN LOGIC
+// AUTH
 auth.onAuthStateChanged(user => {
     if (user) {
         const safeEmail = user.email.replace(/\./g, ',');
         db.ref('whitelist/' + safeEmail).on('value', snap => {
-            if (snap.val() === true) {
+            if (snap.exists() && snap.val() === true) {
                 document.getElementById('admin-panel').style.display = 'block';
                 document.getElementById('mechanic-view').style.display = 'none';
+                document.getElementById('admin-status-btn').textContent = "✅ BEHEER ACTIEF";
                 setupAdminGrid();
             } else {
-                alert("Geen beheerderstoegang voor dit account.");
-                auth.signOut();
+                document.getElementById('admin-status-btn').textContent = "⏳ TOEGANG AANGEVRAAGD";
             }
         });
     } else {
         document.getElementById('admin-panel').style.display = 'none';
         document.getElementById('mechanic-view').style.display = 'block';
+        document.getElementById('admin-status-btn').textContent = "🛠️ BEHEERDER LOGIN";
     }
 });
+
+document.getElementById('btn-auth').onclick = () => {
+    auth.signInWithPopup(provider).then((res) => {
+        const safeEmail = res.user.email.replace(/\./g, ',');
+        db.ref('whitelist/' + safeEmail).once('value', snap => {
+            if (!snap.exists()) {
+                if(confirm("Geen toegang. Aanvraag sturen naar Joran?")) {
+                    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { user_name: res.user.displayName, user_email: res.user.email });
+                    alert("Aanvraag verzonden!");
+                }
+            }
+            toggleLogin(false);
+        });
+    });
+};
 
 function setupAdminGrid() {
     const g = document.getElementById('price-edit-grid');
     g.innerHTML = `<div class="head">Item</div><div class="head">Prijs (€)</div>`;
     for (let sec in PRICES) {
         for (let id in PRICES[sec]) {
-            g.innerHTML += `<div>${LABELS[id] || id}</div>
-                            <input type="number" class="adm-in" data-sec="${sec}" data-id="${id}" value="${PRICES[sec][id]}">`;
+            g.innerHTML += `<div>${LABELS[id]}</div><input type="number" class="adm-in" data-sec="${sec}" data-id="${id}" value="${PRICES[sec][id]}">`;
         }
     }
 }
 
 document.getElementById('btn-save-prices').onclick = () => {
-    document.querySelectorAll('.adm-in').forEach(i => {
-        PRICES[i.dataset.sec][i.dataset.id] = parseInt(i.value) || 0;
-    });
-    db.ref('prices').set(PRICES).then(() => alert("Prijzen succesvol bijgewerkt!"));
+    document.querySelectorAll('.adm-in').forEach(i => { PRICES[i.dataset.sec][i.dataset.id] = parseInt(i.value) || 0; });
+    db.ref('prices').set(PRICES).then(() => alert("Opgeslagen!"));
+};
+
+document.getElementById('btn-copy-total').onclick = () => {
+    navigator.clipboard.writeText(window.lastSummaryText);
+    alert("Overzicht gekopieerd!");
 };
 
 function toggleLogin(s) { document.getElementById('login-overlay').style.display = s ? 'flex' : 'none'; }
-document.getElementById('btn-auth').onclick = () => auth.signInWithPopup(provider).then(() => toggleLogin(false));
-document.getElementById('btn-copy-total').onclick = () => {
-    if(window.lastSummaryText) { navigator.clipboard.writeText(window.lastSummaryText); alert("Gekopieerd!"); }
-};
 </script>
 </body>
 </html>
